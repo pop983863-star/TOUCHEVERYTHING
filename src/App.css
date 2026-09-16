@@ -31,12 +31,13 @@ body {
   height: var(--grid-height);
 }
 
+/* 레이어 공통 스타일 및 페이드 인/아웃 */
 .layer-static, .layer-dynamic {
   position: absolute;
   top: 0; left: 0;
   width: 100%; height: 100%;
   opacity: 0;
-  transition: opacity 1.2s ease-in-out;
+  transition: opacity 1.5s cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: none;
 }
 
@@ -46,12 +47,15 @@ body {
   z-index: 10;
 }
 
-.layer-static img {
+/* 초기 이미지 크기 불일치 해결: fill을 사용하여 박스에 꽉 맞춤 */
+.layer-static img.pixel-perfect {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: fill; 
+  display: block;
 }
 
+/* 마스킹 원 스타일 및 이미지 교체 페이드 효과 */
 .mask-circle {
   position: absolute;
   width: var(--circle-size);
@@ -59,14 +63,17 @@ body {
   border-radius: 50%;
   background-repeat: no-repeat;
   background-size: var(--grid-width) var(--grid-height);
+  /* 이미지 바뀔 때 부드럽게 페이드 */
+  transition: background-image 1.2s ease-in-out;
 }
 
+/* 로고 마커 - 96px 원을 완벽히 가리도록 설정 */
 .moving-logo-marker {
   position: absolute;
   width: var(--circle-size);
   height: var(--circle-size);
   z-index: 20;
-  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), opacity 1s ease;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -77,6 +84,7 @@ body {
   height: 100%;
   border-radius: 50%;
   object-fit: cover;
+  /* 아래 원을 완전히 덮기 위해 미세하게 확대 */
   transform: scale(1.02);
   display: block;
 }
@@ -88,7 +96,7 @@ body {
 }
 
 form {
-  border-bottom: 1px solid #000;
+  border-bottom: 1px solid #111;
   padding: 8px 0;
   width: 300px;
 }
@@ -100,5 +108,5 @@ input {
   text-transform: uppercase;
   text-align: center;
   background: transparent;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.15em;
 }
