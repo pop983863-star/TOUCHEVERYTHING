@@ -3,7 +3,6 @@ import './App.css';
 
 const COLUMN_STRUCTURE = [3, 4, 3, 4, 3];
 const TOTAL_NODES = 17;
-const INITIAL_LOGO_INDICES = [3, 13]; // '대지 42 사본'의 로고 위치
 
 const generateGridNodes = () => {
   const nodes = [];
@@ -20,7 +19,7 @@ const generateGridNodes = () => {
 function App() {
   const [inputText, setInputText] = useState('');
   const [nodes] = useState(generateGridNodes());
-  const [mode, setMode] = useState('initial'); // 'initial', 'interactive', 'idle-show'
+  const [mode, setMode] = useState('static'); // 'static', 'interactive', 'slideshow'
   const [activeIndex, setActiveIndex] = useState(0);
   const [currentBgImage, setCurrentBgImage] = useState('');
   const lastActivity = useRef(Date.now());
@@ -40,82 +39,77 @@ function App() {
   const handleInteraction = (val) => {
     setInputText(val);
     lastActivity.current = Date.now();
-    if (mode !== 'interactive') {
+    if (mode === 'static') {
       setMode('interactive');
       fetchNewImage(val);
     }
   };
 
-  // 타임라인 시퀀스 로직
+  // 10초/30초 타임라인 시퀀스
   useEffect(() => {
     const timer = setInterval(() => {
       const now = Date.now();
       const diff = (now - lastActivity.current) / 1000;
 
       if (mode === 'interactive' && diff >= 10) {
-        setMode('initial'); // 10초 무반응 시 초기 로고 상태로
-      } else if (mode === 'initial' && diff >= 20 && diff < 50) {
-        // 로고 상태 복귀 후 10초 더 지나면 (총 20초 무반응) 이미지 쇼 시작
-        if (mode !== 'idle-show') {
-          setMode('idle-show');
+        setMode('static'); // 10초 무반응 시 '대지 42' 이미지로 복귀
+      } else if (mode === 'static' && diff >= 20 && diff < 50) {
+        if (mode !== 'slideshow') {
+          setMode('slideshow');
           fetchNewImage('minimal');
         }
-      } else if (mode === 'idle-show' && diff >= 50) {
-        // 이미지 쇼 30초 진행 후 다시 초기화
-        setMode('initial');
+      } else if (mode === 'slideshow' && diff >= 50) {
+        setMode('static');
       }
     }, 1000);
     return () => clearInterval(timer);
   }, [mode]);
 
   useEffect(() => {
-    if (mode !== 'initial') {
+    if (mode !== 'static') {
       const interval = setInterval(() => {
         setActiveIndex(prev => (prev + 1) % TOTAL_NODES);
-        if (mode === 'idle-show') fetchNewImage('abstract');
+        if (mode === 'slideshow') fetchNewImage('abstract');
       }, 5000);
       return () => clearInterval(interval);
     }
   }, [mode]);
 
   return (
-    <div className={`brand-container state-${mode}`}>
+    <div className={`brand-container mode-${mode}`}>
       <main className="viewport">
-        <div className="grid-system">
-          {nodes.map((node, i) => {
-            const isInitialLogo = INITIAL_LOGO_INDICES.includes(i);
-            const isMasking = mode === 'interactive' || mode === 'idle-show';
-            
-            return (
+        <div className="grid-wrapper">
+          
+          {/* [모드 1] 대지 42 사본: 정적 고화질 이미지 (초기 상태) */}
+          <div className={`initial-static-view ${mode === 'static' ? 'visible' : ''}`}>
+            <img src="/assets/initial-grid.png" alt="Initial Design" />
+          </div>
+
+          {/* [모드 2 & 3] 인터랙티브 그리드: 마스킹 시스템 */}
+          <div className={`dynamic-system ${mode !== 'static' ? 'visible' : ''}`}>
+            {nodes.map((node, i) => (
               <div 
                 key={node.id} 
-                className="node"
+                className="mask-node"
                 style={{ 
                   left: node.x, 
                   top: node.y,
-                  backgroundImage: isMasking ? `url(${currentBgImage})` : 'none',
+                  backgroundImage: `url(${currentBgImage})`,
                   backgroundPosition: `-${node.x}px -${node.y}px`,
-                  backgroundSize: '496px 396px',
-                  backgroundColor: !isMasking && !isInitialLogo ? '#D9D9D9' : 'transparent'
+                  backgroundSize: '496px 396px'
                 }}
-              >
-                {/* 초기 상태(initial)에서 특정 위치에만 로고 표시 */}
-                {mode === 'initial' && isInitialLogo && (
-                  <img src="/assets/logo-reference.png" className="logo-img-fit" alt="Logo" />
-                )}
-              </div>
-            );
-          })}
-
-          {/* 인터랙션 시에만 나타나는 움직이는 로고 마커 */}
-          {mode !== 'initial' && (
+              />
+            ))}
+            
+            {/* 움직이는 로고 마커 (원과 1:1 크기) */}
             <div 
-              className="logo-marker"
+              className="moving-logo"
               style={{ transform: `translate(${nodes[activeIndex].x}px, ${nodes[activeIndex].y}px)` }}
             >
-              <img src="/assets/logo-reference.png" alt="Marker" />
+              <img src="/assets/logo-reference.png" alt="Logo" />
             </div>
-          )}
+          </div>
+
         </div>
       </main>
 
@@ -124,7 +118,7 @@ function App() {
           <input 
             value={inputText} 
             onChange={(e) => handleInteraction(e.target.value)} 
-            placeholder="TYPE TO INTERACT" 
+            placeholder="TYPE TO START INTERACTION" 
           />
         </form>
       </footer>
