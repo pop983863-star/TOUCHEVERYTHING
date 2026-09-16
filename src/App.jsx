@@ -3,10 +3,12 @@ import './App.css';
 
 const COLUMN_STRUCTURE = [3, 4, 3, 4, 3];
 const TOTAL_NODES = 17;
+// 초기 이미지(대지 42) 상의 로고 위치와 동일하게 설정
+const INITIAL_LOGO_INDICES = [3, 13]; 
 
 const generateGridNodes = () => {
   const nodes = [];
-  const gap = 100;
+  const gap = 100; // 원 중심 간의 간격
   COLUMN_STRUCTURE.forEach((rowCount, colIndex) => {
     const offsetY = rowCount === 3 ? 50 : 0;
     for (let i = 0; i < rowCount; i++) {
@@ -20,11 +22,13 @@ function App() {
   const [inputText, setInputText] = useState('');
   const [nodes] = useState(generateGridNodes());
   const [mode, setMode] = useState('static'); // 'static', 'interactive', 'slideshow'
-  const [activeIndex, setActiveIndex] = useState(0);
+  
+  // 2개의 로고 위치 관리
+  const [activeIndices, setActiveIndices] = useState(INITIAL_LOGO_INDICES);
   const [currentBgImage, setCurrentBgImage] = useState('');
   const lastActivity = useRef(Date.now());
 
-  const fetchNewImage = async (query = 'nature') => {
+  const fetchNewImage = async (query = 'abstract') => {
     try {
       const res = await fetch(`/api/images?q=${query}`);
       const data = await res.json();
@@ -45,14 +49,27 @@ function App() {
     }
   };
 
-  // 10초/30초 타임라인 시퀀스
+  // 2개의 로고를 무작위 위치로 이동시키는 함수
+  const moveLogos = useCallback(() => {
+    setActiveIndices(() => {
+      const first = Math.floor(Math.random() * TOTAL_NODES);
+      let second = Math.floor(Math.random() * TOTAL_NODES);
+      while (second === first) { // 두 로고가 겹치지 않게 함
+        second = Math.floor(Math.random() * TOTAL_NODES);
+      }
+      return [first, second];
+    });
+  }, []);
+
+  // 타임라인 시퀀스 (10초/30초)
   useEffect(() => {
     const timer = setInterval(() => {
       const now = Date.now();
       const diff = (now - lastActivity.current) / 1000;
 
       if (mode === 'interactive' && diff >= 10) {
-        setMode('static'); // 10초 무반응 시 '대지 42' 이미지로 복귀
+        setMode('static');
+        setActiveIndices(INITIAL_LOGO_INDICES);
       } else if (mode === 'static' && diff >= 20 && diff < 50) {
         if (mode !== 'slideshow') {
           setMode('slideshow');
@@ -60,37 +77,39 @@ function App() {
         }
       } else if (mode === 'slideshow' && diff >= 50) {
         setMode('static');
+        setActiveIndices(INITIAL_LOGO_INDICES);
       }
     }, 1000);
     return () => clearInterval(timer);
   }, [mode]);
 
+  // 로고 이동 타이머 (애니메이션 모드일 때)
   useEffect(() => {
     if (mode !== 'static') {
       const interval = setInterval(() => {
-        setActiveIndex(prev => (prev + 1) % TOTAL_NODES);
-        if (mode === 'slideshow') fetchNewImage('abstract');
+        moveLogos();
+        if (mode === 'slideshow') fetchNewImage('art');
       }, 5000);
       return () => clearInterval(interval);
     }
-  }, [mode]);
+  }, [mode, moveLogos]);
 
   return (
     <div className={`brand-container mode-${mode}`}>
       <main className="viewport">
         <div className="grid-wrapper">
           
-          {/* [모드 1] 대지 42 사본: 정적 고화질 이미지 (초기 상태) */}
-          <div className={`initial-static-view ${mode === 'static' ? 'visible' : ''}`}>
-            <img src="/assets/initial-grid.png" alt="Initial Design" />
+          {/* 모드 1: 초기 대지 42 정적 이미지 */}
+          <div className={`static-layer ${mode === 'static' ? 'visible' : ''}`}>
+            <img src="/assets/initial-grid.png" alt="Static Grid" />
           </div>
 
-          {/* [모드 2 & 3] 인터랙티브 그리드: 마스킹 시스템 */}
-          <div className={`dynamic-system ${mode !== 'static' ? 'visible' : ''}`}>
-            {nodes.map((node, i) => (
+          {/* 모드 2 & 3: 인터랙티브 마스킹 시스템 */}
+          <div className={`dynamic-layer ${mode !== 'static' ? 'visible' : ''}`}>
+            {nodes.map((node) => (
               <div 
                 key={node.id} 
-                className="mask-node"
+                className="mask-circle"
                 style={{ 
                   left: node.x, 
                   top: node.y,
@@ -101,13 +120,18 @@ function App() {
               />
             ))}
             
-            {/* 움직이는 로고 마커 (원과 1:1 크기) */}
-            <div 
-              className="moving-logo"
-              style={{ transform: `translate(${nodes[activeIndex].x}px, ${nodes[activeIndex].y}px)` }}
-            >
-              <img src="/assets/logo-reference.png" alt="Logo" />
-            </div>
+            {/* 움직이는 2개의 로고 마커 */}
+            {activeIndices.map((idx, i) => (
+              <div 
+                key={`marker-${i}`}
+                className="moving-logo"
+                style={{ 
+                  transform: `translate(${nodes[idx]?.x || 0}px, ${nodes[idx]?.y || 0}px)` 
+                }}
+              >
+                <img src="/assets/logo-reference.png" alt="Logo" />
+              </div>
+            ))}
           </div>
 
         </div>
