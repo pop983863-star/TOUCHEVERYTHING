@@ -3,7 +3,7 @@ import './App.css';
 
 const COLUMN_STRUCTURE = [3, 4, 3, 4, 3];
 const TOTAL_NODES = 17;
-const DEFAULT_TEXT = "TOUCH EVERYTHING";
+const INITIAL_LOGO_INDICES = [3, 13]; // 초기 화면 로고 위치 (2열 상단, 4열 하단)
 
 const generateGridNodes = () => {
   const nodes = [];
@@ -19,18 +19,17 @@ const generateGridNodes = () => {
 
 function App() {
   const [inputText, setInputText] = useState('');
-  const [nodes, setNodes] = useState([]);
+  const [nodes] = useState(generateGridNodes());
+  const [isStarted, setIsStarted] = useState(false); // 인터랙션 시작 여부
   const [activeIndex, setActiveIndex] = useState(0);
   const [currentBgImage, setCurrentBgImage] = useState('');
-  const [loading, setLoading] = useState(false);
 
-  // 새로운 이미지 한 장을 가져오는 함수
+  // 새로운 이미지 가져오기
   const fetchNewImage = async (query = 'nature') => {
     try {
       const res = await fetch(`/api/images?q=${query}`);
       const data = await res.json();
-      if (data.images && data.images.length > 0) {
-        // 검색 결과 중 무작위 하나 선택
+      if (data.images?.length > 0) {
         const randomImg = data.images[Math.floor(Math.random() * data.images.length)];
         setCurrentBgImage(randomImg);
       }
@@ -39,76 +38,89 @@ function App() {
     }
   };
 
-  const generateLayout = useCallback(async (textToUse = DEFAULT_TEXT) => {
-    setLoading(true);
-    const coords = generateGridNodes();
-    const words = textToUse.toUpperCase().split(/\s+/).filter(Boolean);
-    
-    await fetchNewImage(words[0] || 'minimal');
+  // 텍스트 입력 시 시스템 활성화
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+    setInputText(value);
+    if (!isStarted && value.trim() !== '') {
+      setIsStarted(true);
+      fetchNewImage(value);
+    }
+  };
 
-    // 타입 배치: 이번에는 이미지를 더 많이 배치하여 마스킹 효과를 극대화 (8개 이미지, 5개 텍스트, 4개 빈칸)
-    let types = [...Array(8).fill('image'), ...Array(5).fill('text'), ...Array(4).fill('empty')]
-                .sort(() => Math.random() - 0.5);
+  const handleFormSubmit = (e) => {
+    e.preventDefault();
+    fetchNewImage(inputText || 'minimal');
+  };
 
-    let wIdx = 0;
-    setNodes(coords.map((c, i) => ({
-      ...c,
-      type: types[i],
-      content: types[i] === 'text' ? (words[wIdx++ % words.length] || '•') : null
-    })));
-    setLoading(false);
-  }, []);
-
-  useEffect(() => { generateLayout(); }, [generateLayout]);
-
-  // 로고 마커가 이동할 때마다 배경 이미지 교체
+  // 로고 이동 시 이미지 자동 교체 (활성화된 상태에서만)
   useEffect(() => {
-    const words = (inputText || DEFAULT_TEXT).split(' ');
-    fetchNewImage(words[Math.floor(Math.random() * words.length)]);
-  }, [activeIndex]);
+    if (isStarted) {
+      const words = (inputText || "TOUCH").split(' ');
+      fetchNewImage(words[Math.floor(Math.random() * words.length)]);
+    }
+  }, [activeIndex, isStarted]);
 
-  // 자동 이동 타이머
+  // 자동 이동 타이머 (활성화된 상태에서만)
   useEffect(() => {
-    const interval = setInterval(() => setActiveIndex(prev => (prev + 1) % TOTAL_NODES), 6000);
-    return () => clearInterval(interval);
-  }, []);
+    if (isStarted) {
+      const interval = setInterval(() => {
+        setActiveIndex(prev => (prev + 1) % TOTAL_NODES);
+      }, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [isStarted]);
 
   return (
     <div className="brand-container">
       <main className="viewport">
         <div className="grid-system">
-          {nodes.map((node, i) => (
-            <div 
-              key={node.id} 
-              className={`node ${node.type} ${activeIndex === i ? 'active' : ''}`}
-              style={{ 
-                left: node.x, 
-                top: node.y,
-                // 이미지 타입일 경우 단일 배경 이미지와 좌표 설정
-                backgroundImage: node.type === 'image' ? `url(${currentBgImage})` : 'none',
-                backgroundPosition: `-${node.x}px -${node.y}px`,
-                backgroundSize: '480px 380px' // 그리드 전체 크기에 맞춤
-              }}
-              onClick={() => setActiveIndex(i)}
-            >
-              {node.type === 'text' && <span className="label">{node.content}</span>}
-            </div>
-          ))}
+          {nodes.map((node, i) => {
+            const isInitialLogo = !isStarted && INITIAL_LOGO_INDICES.includes(i);
+            
+            return (
+              <div 
+                key={node.id} 
+                className={`node ${isInitialLogo ? 'static-logo' : ''}`}
+                style={{ 
+                  left: node.x, 
+                  top: node.y,
+                  // 시작된 후에는 모든 원에 마스킹 이미지 적용
+                  backgroundImage: isStarted ? `url(${currentBgImage})` : 'none',
+                  backgroundPosition: `-${node.x}px -${node.y}px`,
+                  backgroundSize: '496px 396px',
+                  backgroundColor: isStarted ? 'transparent' : (isInitialLogo ? 'transparent' : '#D9D9D9')
+                }}
+                onClick={() => isStarted && setActiveIndex(i)}
+              >
+                {/* 초기 상태의 정적 로고 이미지 */}
+                {isInitialLogo && <img src="/assets/logo-reference.png" className="inner-logo" alt="Logo" />}
+              </div>
+            );
+          })}
 
-          {/* 로고 마커 (검은 원 로고) */}
-          <div 
-            className="logo-marker"
-            style={{ transform: `translate(${nodes[activeIndex]?.x || 0}px, ${nodes[activeIndex]?.y || 0}px)` }}
-          >
-            <img src="/assets/logo-reference.jpg" alt="Logo" />
-          </div>
+          {/* 활성화된 후 움직이는 로고 마커 */}
+          {isStarted && (
+            <div 
+              className="logo-marker"
+              style={{ transform: `translate(${nodes[activeIndex].x}px, ${nodes[activeIndex].y}px)` }}
+            >
+              <img src="/assets/logo-reference.png" alt="Active Logo" />
+            </div>
+          )}
         </div>
       </main>
 
       <footer className="footer">
-        <form onSubmit={(e) => { e.preventDefault(); generateLayout(inputText); }}>
-          <input value={inputText} onChange={e => setInputText(e.target.value)} placeholder="TYPE TO GENERATE..." />
-          <button type="submit">{loading ? '...' : 'GENERATE'}</button>
+        <form onSubmit={handleFormSubmit}>
+          <input 
+            value={inputText} 
+            onChange={handleInputChange} 
+            placeholder="TYPE TO START..." 
+            autoFocus
+          />
+          {/* 버튼 문구 삭제 */}
+          <button type="submit" style={{ display: 'none' }}></button>
         </form>
       </footer>
     </div>
