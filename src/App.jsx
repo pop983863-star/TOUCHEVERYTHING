@@ -3,8 +3,7 @@ import './App.css';
 
 const COLUMN_STRUCTURE = [3, 4, 3, 4, 3];
 const TOTAL_NODES = 17;
-// '대지 42 사본'의 실제 로고 인덱스 위치
-const INITIAL_LOGO_INDICES = [3, 13]; 
+const INITIAL_LOGO_INDICES = [3, 13]; // 초기 이미지 상의 로고 위치
 
 const generateGridNodes = () => {
   const nodes = [];
@@ -58,7 +57,6 @@ function App() {
     });
   }, []);
 
-  // 타임라인 (10초/30초)
   useEffect(() => {
     const timer = setInterval(() => {
       const now = Date.now();
@@ -71,4 +69,75 @@ function App() {
           setMode('slideshow');
           fetchNewImage('minimal');
         }
-      } else if (mode ===
+      } else if (mode === 'slideshow' && diff >= 50) {
+        setMode('static');
+        setActiveIndices(INITIAL_LOGO_INDICES);
+      }
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [mode]);
+
+  useEffect(() => {
+    if (mode !== 'static') {
+      const interval = setInterval(() => {
+        moveLogos();
+        if (mode === 'slideshow') fetchNewImage('art');
+      }, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [mode, moveLogos]);
+
+  return (
+    <div className="brand-container">
+      <main className="viewport">
+        <div className="main-grid-wrapper">
+          
+          {/* 초기 정적 레이어 */}
+          <div className={`layer-static ${mode === 'static' ? 'on' : ''}`}>
+            <img src="/assets/initial-grid.png" alt="Static Grid" />
+          </div>
+
+          {/* 동적 인터랙션 레이어 */}
+          <div className={`layer-dynamic ${mode !== 'static' ? 'on' : ''}`}>
+            {nodes.map((node) => (
+              <div 
+                key={node.id} 
+                className="mask-circle"
+                style={{ 
+                  left: `${node.x}px`, 
+                  top: `${node.y}px`,
+                  backgroundImage: `url(${currentBgImage})`,
+                  backgroundPosition: `-${node.x}px -${node.y}px`,
+                  backgroundSize: '496px 396px' 
+                }}
+              />
+            ))}
+            
+            {activeIndices.map((idx, i) => (
+              <div 
+                key={`marker-${i}`}
+                className="moving-logo-marker"
+                style={{ transform: `translate(${nodes[idx].x}px, ${nodes[idx].y}px)` }}
+              >
+                <img src="/assets/logo-reference.png" alt="Logo" />
+              </div>
+            ))}
+          </div>
+
+        </div>
+      </main>
+
+      <footer className="footer">
+        <form onSubmit={(e) => e.preventDefault()}>
+          <input 
+            value={inputText} 
+            onChange={(e) => handleInteraction(e.target.value)} 
+            placeholder="TYPE TO START INTERACTION" 
+          />
+        </form>
+      </footer>
+    </div>
+  );
+}
+
+export default App;
