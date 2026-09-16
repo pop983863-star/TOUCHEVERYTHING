@@ -1,13 +1,14 @@
+/* CSS 변수 설정 */
 :root {
-  --node-size: 96px; /* 그리드 원 크기 */
-  --grid-w: 496px;   /* 전체 가로 너비 */
-  --grid-h: 396px;   /* 전체 세로 높이 */
+  --circle-size: 96px;
+  --grid-width: 496px;
+  --grid-height: 396px;
 }
 
 body {
   margin: 0;
   background-color: #ffffff;
-  font-family: 'Inter', sans-serif;
+  font-family: sans-serif;
   overflow: hidden;
 }
 
@@ -27,76 +28,67 @@ body {
 
 .main-grid-wrapper {
   position: relative;
-  width: var(--grid-w);
-  height: var(--grid-h);
+  width: var(--grid-width);
+  height: var(--grid-height);
 }
 
-/* 1. 정적 레이어 (initial-grid.png) */
-.static-layer {
+/* 정적/동적 레이어 공통 스타일 */
+.layer-static, .layer-dynamic {
   position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  opacity: 0;
-  z-index: 1;
-  transition: opacity 1.2s ease-in-out;
-}
-
-.static-layer.is-active {
-  opacity: 1;
-  z-index: 10;
-}
-
-.static-layer img {
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
-  object-fit: fill; /* 지정한 4000:3194 비율로 강제 피팅 */
-  display: block;
-}
-
-/* 2. 동적 마스킹 레이어 */
-.dynamic-layer {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
   opacity: 0;
-  z-index: 1;
   transition: opacity 1.2s ease-in-out;
+  pointer-events: none;
 }
 
-.dynamic-layer.is-active {
+.on {
   opacity: 1;
+  pointer-events: auto;
   z-index: 10;
 }
 
-.mask-circle {
-  position: absolute;
-  width: var(--node-size);
-  height: var(--node-size);
-  border-radius: 50%;
-  background-repeat: no-repeat;
-  background-size: var(--grid-w) var(--grid-h);
-  transition: background-image 0.8s ease-in-out;
+.layer-static img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
-/* 3. 움직이는 로고 마커 (원과 1:1 완벽 일치) */
-.logo-overlay {
+/* 마스킹 원 스타일 */
+.mask-circle {
   position: absolute;
-  width: var(--node-size);
-  height: var(--node-size);
+  width: var(--circle-size);
+  height: var(--circle-size);
+  border-radius: 50%;
+  background-repeat: no-repeat;
+  background-size: var(--grid-width) var(--grid-height);
+}
+
+/* 움직이는 로고 마커 - 고해상도 이미지 크기 제어 핵심 */
+.moving-logo-marker {
+  position: absolute;
+  /* 부모 컨테이너 크기를 96px로 강제 고정 */
+  width: var(--circle-size);
+  height: var(--circle-size);
   z-index: 20;
-  transition: transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
 }
 
-.logo-overlay img {
+.moving-logo-marker img {
+  /* 이미지가 아무리 커도 96px의 부모(100%)에 맞춥니다 */
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  object-fit: cover;
-  /* 원형 마스크를 완전히 덮기 위해 미세하게(1px) 키움 */
-  transform: scale(1.02); 
+  /* 꽉 채우기 위해 cover 사용 */
+  object-fit: cover; 
+  /* 마스킹 원을 완전히 가리기 위해 아주 미세하게 확대 */
+  transform: scale(1.01);
   display: block;
 }
 
@@ -107,17 +99,18 @@ body {
 }
 
 form {
-  border-bottom: 1px solid #111;
+  border-bottom: 1px solid #000;
   padding: 8px 0;
   width: 300px;
 }
 
 input {
-  border: none; outline: none;
+  border: none;
+  outline: none;
   width: 100%;
   font-size: 14px;
   text-transform: uppercase;
   text-align: center;
   background: transparent;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.1em;
 }
