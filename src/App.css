@@ -1,46 +1,107 @@
 :root {
-  --node-size: 96px; /* 그리드 원 크기 */
-  --grid-w: 496px;   /* 전체 가로 너비 */
-  --grid-h: 396px;   /* 전체 세로 높이 */
+  --node-size: 96px; /* 모든 원의 크기를 96px로 고정 */
+  --grid-width: 496px;
+  --grid-height: 396px;
 }
 
-/* 1. 초기 이미지 레이어 (화질 저하 방지 및 정밀 정렬) */
-.static-layer img {
-  width: 100%;
-  height: 100%;
-  object-fit: fill; /* 우리가 맞춘 3194:4000 비율로 강제 피팅 */
-  display: block;
+body {
+  margin: 0;
+  background-color: #ffffff;
+  font-family: 'Inter', sans-serif;
+  overflow: hidden;
 }
 
-/* 2. 움직이는 로고 마커 (원형 그리드와 1:1 일치) */
-.moving-logo {
-  position: absolute;
-  width: var(--node-size);
-  height: var(--node-size);
-  z-index: 20;
+.brand-container {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.viewport {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.moving-logo img {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  /* cover를 써야 혹시 모를 이미지의 미세한 여백까지 꽉 채워 아래를 가립니다 */
-  object-fit: cover; 
-  /* 96px 원을 아주 미세하게(0.5px 정도) 더 덮어서 아래 회색이 안 보이게 함 */
-  transform: scale(1.01); 
+.main-grid-wrapper {
+  position: relative;
+  width: var(--grid-width);
+  height: var(--grid-height);
 }
 
-/* 3. 마스킹 원 (배경 이미지 투영) */
+/* 레이어 공통 설정 */
+.static-layer, .dynamic-layer {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.static-layer.active, .dynamic-layer.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.static-layer img {
+  width: 100%; height: 100%;
+  object-fit: contain; /* 원본 비율 유지하며 꽉 채움 */
+}
+
+/* 마스킹 원 스타일 */
 .mask-node {
   position: absolute;
   width: var(--node-size);
   height: var(--node-size);
   border-radius: 50%;
   background-repeat: no-repeat;
-  /* 아래 설정이 정확해야 로고가 이동해도 배경이 안 어긋납니다 */
-  background-size: var(--grid-w) var(--grid-h);
+  /* 배경 이미지 교체 시 부드러운 효과 */
+  transition: background-image 0.8s ease-in-out;
+}
+
+/* 로고 마커 스타일: 원을 완전히 가리도록 수정 */
+.logo-overlay {
+  position: absolute;
+  width: var(--node-size);
+  height: var(--node-size);
+  z-index: 20;
+  transition: transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-overlay img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  /* 빈틈없이 원을 꽉 채우기 위해 cover 사용 및 미세 확대 */
+  object-fit: cover;
+  transform: scale(1.02); /* 마스킹 원을 완전히 덮기 위해 2% 미세 확대 */
+  display: block;
+}
+
+.footer {
+  padding-bottom: 80px;
+  display: flex;
+  justify-content: center;
+}
+
+form {
+  border-bottom: 1px solid #111;
+  padding: 8px 0;
+  width: 300px;
+}
+
+input {
+  border: none; outline: none;
+  width: 100%;
+  font-size: 14px;
+  text-transform: uppercase;
+  text-align: center;
+  background: transparent;
+  letter-spacing: 0.15em;
 }
