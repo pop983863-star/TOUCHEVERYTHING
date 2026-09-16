@@ -1,7 +1,7 @@
 :root {
-  --node-size: 96px; /* 80px에서 20% 확대하여 간격 좁힘 */
-  --grid-w: 496px;
-  --grid-h: 396px;
+  --node-size: 96px; /* 모든 원의 크기 96px 고정 */
+  --grid-w: 496px;   /* 100px * 4 + 96px */
+  --grid-h: 396px;   /* 100px * 3 + 96px */
 }
 
 body {
@@ -31,31 +31,28 @@ body {
   height: var(--grid-h);
 }
 
-/* 초기 '대지 42' 이미지 뷰 */
-.initial-static-view {
+/* 초기 정적 레이어 */
+.static-layer {
   position: absolute;
   top: 0; left: 0;
-  width: 100%;
-  height: 100%;
+  width: 100%; height: 100%;
   opacity: 0;
-  transition: opacity 1.5s ease-in-out;
+  transition: opacity 1.2s ease-in-out;
   z-index: 5;
 }
 
-.initial-static-view img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain; /* 원본 화질 유지하며 그리드에 맞춤 */
+.static-layer img {
+  width: 100%; height: 100%;
+  object-fit: contain;
 }
 
-/* 동적 시스템 뷰 */
-.dynamic-system {
+/* 동적 인터랙션 레이어 */
+.dynamic-layer {
   position: absolute;
   top: 0; left: 0;
-  width: 100%;
-  height: 100%;
+  width: 100%; height: 100%;
   opacity: 0;
-  transition: opacity 1.5s ease-in-out;
+  transition: opacity 1.2s ease-in-out;
   z-index: 1;
 }
 
@@ -64,7 +61,7 @@ body {
   z-index: 10 !important;
 }
 
-.mask-node {
+.mask-circle {
   position: absolute;
   width: var(--node-size);
   height: var(--node-size);
@@ -73,20 +70,23 @@ body {
   transition: background-image 1s ease-in-out;
 }
 
-/* 로고 마커: 그리드 원과 100% 일치 */
+/* 로고 마커: 그리드 원과 정확히 1:1 크기로 겹침 */
 .moving-logo {
   position: absolute;
   width: var(--node-size);
   height: var(--node-size);
   z-index: 20;
   transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .moving-logo img {
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  object-fit: cover;
+  object-fit: cover; /* 원 내부를 꽉 채워 회색 원을 완벽히 가림 */
 }
 
 .footer {
@@ -108,4 +108,5 @@ input {
   text-transform: uppercase;
   text-align: center;
   background: transparent;
+  letter-spacing: 0.1em;
 }
