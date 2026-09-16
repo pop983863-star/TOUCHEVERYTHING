@@ -25,7 +25,6 @@ function App() {
   const [currentBgImage, setCurrentBgImage] = useState('');
   const lastActivity = useRef(Date.now());
 
-  // 이미지 검색 기능 (아까 잘 되던 로직 복구)
   const fetchNewImage = async (query = 'minimal') => {
     try {
       const res = await fetch(`/api/images?q=${encodeURIComponent(query)}`);
@@ -57,7 +56,6 @@ function App() {
     });
   }, []);
 
-  // 타임라인 (10초/30초)
   useEffect(() => {
     const timer = setInterval(() => {
       const now = Date.now();
@@ -82,7 +80,6 @@ function App() {
     if (mode !== 'static') {
       const interval = setInterval(() => {
         moveLogos();
-        // 이동할 때마다 이미지도 교체하여 역동성 부여
         fetchNewImage(inputText || 'minimal');
       }, 5000);
       return () => clearInterval(interval);
@@ -93,9 +90,12 @@ function App() {
     <div className="brand-container">
       <main className="viewport">
         <div className="main-grid-wrapper">
+          
+          {/* 초기 레이어: object-fit을 fill로 하여 496x396에 꽉 맞춤 */}
           <div className={`layer-static ${mode === 'static' ? 'on' : ''}`}>
-            <img src="/assets/initial-grid.png" alt="Initial Grid" />
+            <img src="/assets/initial-grid.png" alt="Static Grid" className="pixel-perfect" />
           </div>
+
           <div className={`layer-dynamic ${mode !== 'static' ? 'on' : ''}`}>
             {nodes.map((node) => (
               <div 
@@ -110,6 +110,7 @@ function App() {
                 }}
               />
             ))}
+            
             {activeIndices.map((idx, i) => (
               <div 
                 key={`marker-${i}`}
@@ -120,8 +121,10 @@ function App() {
               </div>
             ))}
           </div>
+
         </div>
       </main>
+
       <footer className="footer">
         <form onSubmit={(e) => { e.preventDefault(); fetchNewImage(inputText); }}>
           <input 
