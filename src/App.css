@@ -1,11 +1,12 @@
 :root {
-  --node-size: 96px; /* 80px에서 20% 확대 */
-  --bg-color: #ffffff;
+  --node-size: 96px; /* 80px에서 20% 확대하여 간격 좁힘 */
+  --grid-w: 496px;
+  --grid-h: 396px;
 }
 
 body {
   margin: 0;
-  background-color: var(--bg-color);
+  background-color: #ffffff;
   font-family: 'Inter', sans-serif;
   overflow: hidden;
 }
@@ -24,45 +25,68 @@ body {
   justify-content: center;
 }
 
-.grid-system {
+.grid-wrapper {
   position: relative;
-  width: 496px; 
-  height: 396px;
+  width: var(--grid-w);
+  height: var(--grid-h);
 }
 
-.node {
+/* 초기 '대지 42' 이미지 뷰 */
+.initial-static-view {
   position: absolute;
-  width: var(--node-size);
-  height: var(--node-size);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  /* 페이드 인/아웃을 위한 부드러운 전환 */
-  transition: 
-    background-image 1.5s ease-in-out, 
-    background-color 1.5s ease-in-out,
-    transform 0.4s ease;
-  overflow: hidden;
-  background-repeat: no-repeat;
-}
-
-/* 로고가 원에 1:1로 꽉 차도록 설정 */
-.logo-img-fit, .logo-marker img {
+  top: 0; left: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  border-radius: 50%;
-  display: block;
+  opacity: 0;
+  transition: opacity 1.5s ease-in-out;
+  z-index: 5;
 }
 
-.logo-marker {
+.initial-static-view img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* 원본 화질 유지하며 그리드에 맞춤 */
+}
+
+/* 동적 시스템 뷰 */
+.dynamic-system {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 1.5s ease-in-out;
+  z-index: 1;
+}
+
+.visible {
+  opacity: 1 !important;
+  z-index: 10 !important;
+}
+
+.mask-node {
   position: absolute;
   width: var(--node-size);
   height: var(--node-size);
-  z-index: 10;
-  pointer-events: none;
+  border-radius: 50%;
+  background-repeat: no-repeat;
+  transition: background-image 1s ease-in-out;
+}
+
+/* 로고 마커: 그리드 원과 100% 일치 */
+.moving-logo {
+  position: absolute;
+  width: var(--node-size);
+  height: var(--node-size);
+  z-index: 20;
   transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.moving-logo img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 .footer {
@@ -78,12 +102,10 @@ form {
 }
 
 input {
-  border: none;
-  outline: none;
+  border: none; outline: none;
   width: 100%;
   font-size: 14px;
   text-transform: uppercase;
   text-align: center;
-  letter-spacing: 0.1em;
   background: transparent;
 }
