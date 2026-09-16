@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import './App.css';
 
 const COLUMN_STRUCTURE = [3, 4, 3, 4, 3];
 const TOTAL_NODES = 17;
-const INITIAL_LOGO_INDICES = [3, 13]; // 초기 화면 로고 위치 (2열 상단, 4열 하단)
+// '대지 42 사본' 이미지의 로고 위치 (2열 상단, 4열 하단)
+const INITIAL_LOGO_INDICES = [3, 13]; 
 
 const generateGridNodes = () => {
   const nodes = [];
@@ -20,107 +21,110 @@ const generateGridNodes = () => {
 function App() {
   const [inputText, setInputText] = useState('');
   const [nodes] = useState(generateGridNodes());
-  const [isStarted, setIsStarted] = useState(false); // 인터랙션 시작 여부
+  const [mode, setMode] = useState('logo'); // 'logo', 'interactive', 'idle-image'
   const [activeIndex, setActiveIndex] = useState(0);
   const [currentBgImage, setCurrentBgImage] = useState('');
+  const lastActivity = useRef(Date.now());
 
-  // 새로운 이미지 가져오기
   const fetchNewImage = async (query = 'nature') => {
     try {
       const res = await fetch(`/api/images?q=${query}`);
       const data = await res.json();
       if (data.images?.length > 0) {
-        const randomImg = data.images[Math.floor(Math.random() * data.images.length)];
-        setCurrentBgImage(randomImg);
+        setCurrentBgImage(data.images[Math.floor(Math.random() * data.images.length)]);
       }
     } catch (e) {
       setCurrentBgImage(`https://picsum.photos/1200/800?sig=${Math.random()}`);
     }
   };
 
-  // 텍스트 입력 시 시스템 활성화
-  const handleInputChange = (e) => {
-    const value = e.target.value;
-    setInputText(value);
-    if (!isStarted && value.trim() !== '') {
-      setIsStarted(true);
-      fetchNewImage(value);
+  // 모드 변경 및 인터랙션 핸들러
+  const startInteraction = (val) => {
+    setInputText(val);
+    lastActivity.current = Date.now();
+    if (mode !== 'interactive') {
+      setMode('interactive');
+      fetchNewImage(val);
     }
   };
 
-  const handleFormSubmit = (e) => {
-    e.preventDefault();
-    fetchNewImage(inputText || 'minimal');
-  };
-
-  // 로고 이동 시 이미지 자동 교체 (활성화된 상태에서만)
+  // 타이머 로직 (10초/30초 시퀀스)
   useEffect(() => {
-    if (isStarted) {
-      const words = (inputText || "TOUCH").split(' ');
-      fetchNewImage(words[Math.floor(Math.random() * words.length)]);
-    }
-  }, [activeIndex, isStarted]);
+    const timer = setInterval(() => {
+      const now = Date.now();
+      const diff = (now - lastActivity.current) / 1000;
 
-  // 자동 이동 타이머 (활성화된 상태에서만)
+      if (mode === 'interactive' && diff >= 10) {
+        setMode('logo'); // 10초간 입력 없으면 로고로 복귀
+      } else if (mode === 'logo' && diff >= 20) {
+        setMode('idle-image'); // 로고 상태에서 10초 더(총 20초) 지나면 이미지 모드
+        fetchNewImage('minimal');
+        setTimeout(() => {
+          if (Date.now() - lastActivity.current >= 50000) setMode('logo');
+        }, 30000); // 30초 동안 유지
+      }
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [mode]);
+
+  // 자동 마커 이동 (interactive 혹은 idle-image 모드일 때)
   useEffect(() => {
-    if (isStarted) {
+    if (mode !== 'logo') {
       const interval = setInterval(() => {
         setActiveIndex(prev => (prev + 1) % TOTAL_NODES);
+        if (mode === 'idle-image') fetchNewImage('art');
       }, 5000);
       return () => clearInterval(interval);
     }
-  }, [isStarted]);
+  }, [mode]);
 
   return (
-    <div className="brand-container">
+    <div className={`brand-container mode-${mode}`}>
       <main className="viewport">
         <div className="grid-system">
           {nodes.map((node, i) => {
-            const isInitialLogo = !isStarted && INITIAL_LOGO_INDICES.includes(i);
+            const isInitialLogo = INITIAL_LOGO_INDICES.includes(i);
+            const showMask = mode === 'interactive' || mode === 'idle-image';
             
             return (
               <div 
                 key={node.id} 
-                className={`node ${isInitialLogo ? 'static-logo' : ''}`}
+                className={`node ${mode === 'logo' && isInitialLogo ? 'is-logo' : ''}`}
                 style={{ 
                   left: node.x, 
                   top: node.y,
-                  // 시작된 후에는 모든 원에 마스킹 이미지 적용
-                  backgroundImage: isStarted ? `url(${currentBgImage})` : 'none',
+                  backgroundImage: showMask ? `url(${currentBgImage})` : 'none',
                   backgroundPosition: `-${node.x}px -${node.y}px`,
                   backgroundSize: '496px 396px',
-                  backgroundColor: isStarted ? 'transparent' : (isInitialLogo ? 'transparent' : '#D9D9D9')
+                  backgroundColor: mode === 'logo' && !isInitialLogo ? '#D9D9D9' : 'transparent'
                 }}
-                onClick={() => isStarted && setActiveIndex(i)}
               >
-                {/* 초기 상태의 정적 로고 이미지 */}
-                {isInitialLogo && <img src="/assets/logo-reference.png" className="inner-logo" alt="Logo" />}
+                {mode === 'logo' && isInitialLogo && (
+                  <img src="/assets/logo-reference.png" className="logo-img" alt="Logo" />
+                )}
               </div>
             );
           })}
 
-          {/* 활성화된 후 움직이는 로고 마커 */}
-          {isStarted && (
+          {/* 움직이는 로고 마커 */}
+          {mode !== 'logo' && (
             <div 
               className="logo-marker"
               style={{ transform: `translate(${nodes[activeIndex].x}px, ${nodes[activeIndex].y}px)` }}
             >
-              <img src="/assets/logo-reference.png" alt="Active Logo" />
+              <img src="/assets/logo-reference.png" alt="Marker" />
             </div>
           )}
         </div>
       </main>
 
       <footer className="footer">
-        <form onSubmit={handleFormSubmit}>
+        <form onSubmit={(e) => { e.preventDefault(); lastActivity.current = Date.now(); fetchNewImage(inputText); }}>
           <input 
             value={inputText} 
-            onChange={handleInputChange} 
+            onChange={(e) => startInteraction(e.target.value)} 
             placeholder="TYPE TO START..." 
-            autoFocus
           />
-          {/* 버튼 문구 삭제 */}
-          <button type="submit" style={{ display: 'none' }}></button>
         </form>
       </footer>
     </div>
