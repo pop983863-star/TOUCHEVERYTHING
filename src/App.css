@@ -1,112 +1,46 @@
 :root {
-  --node-size: 96px; /* 모든 원의 크기 96px 고정 */
-  --grid-w: 496px;   /* 100px * 4 + 96px */
-  --grid-h: 396px;   /* 100px * 3 + 96px */
+  --node-size: 96px; /* 그리드 원 크기 */
+  --grid-w: 496px;   /* 전체 가로 너비 */
+  --grid-h: 396px;   /* 전체 세로 높이 */
 }
 
-body {
-  margin: 0;
-  background-color: #ffffff;
-  font-family: 'Inter', sans-serif;
-  overflow: hidden;
-}
-
-.brand-container {
-  width: 100vw;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-.viewport {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.grid-wrapper {
-  position: relative;
-  width: var(--grid-w);
-  height: var(--grid-h);
-}
-
-/* 초기 정적 레이어 */
-.static-layer {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  opacity: 0;
-  transition: opacity 1.2s ease-in-out;
-  z-index: 5;
-}
-
+/* 1. 초기 이미지 레이어 (화질 저하 방지 및 정밀 정렬) */
 .static-layer img {
-  width: 100%; height: 100%;
-  object-fit: contain;
+  width: 100%;
+  height: 100%;
+  object-fit: fill; /* 우리가 맞춘 3194:4000 비율로 강제 피팅 */
+  display: block;
 }
 
-/* 동적 인터랙션 레이어 */
-.dynamic-layer {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  opacity: 0;
-  transition: opacity 1.2s ease-in-out;
-  z-index: 1;
-}
-
-.visible {
-  opacity: 1 !important;
-  z-index: 10 !important;
-}
-
-.mask-circle {
-  position: absolute;
-  width: var(--node-size);
-  height: var(--node-size);
-  border-radius: 50%;
-  background-repeat: no-repeat;
-  transition: background-image 1s ease-in-out;
-}
-
-/* 로고 마커: 그리드 원과 정확히 1:1 크기로 겹침 */
+/* 2. 움직이는 로고 마커 (원형 그리드와 1:1 일치) */
 .moving-logo {
   position: absolute;
   width: var(--node-size);
   height: var(--node-size);
   z-index: 20;
-  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .moving-logo img {
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  object-fit: cover; /* 원 내부를 꽉 채워 회색 원을 완벽히 가림 */
+  /* cover를 써야 혹시 모를 이미지의 미세한 여백까지 꽉 채워 아래를 가립니다 */
+  object-fit: cover; 
+  /* 96px 원을 아주 미세하게(0.5px 정도) 더 덮어서 아래 회색이 안 보이게 함 */
+  transform: scale(1.01); 
 }
 
-.footer {
-  padding-bottom: 80px;
-  display: flex;
-  justify-content: center;
-}
-
-form {
-  border-bottom: 1px solid #000;
-  padding: 8px 0;
-  width: 280px;
-}
-
-input {
-  border: none; outline: none;
-  width: 100%;
-  font-size: 14px;
-  text-transform: uppercase;
-  text-align: center;
-  background: transparent;
-  letter-spacing: 0.1em;
+/* 3. 마스킹 원 (배경 이미지 투영) */
+.mask-node {
+  position: absolute;
+  width: var(--node-size);
+  height: var(--node-size);
+  border-radius: 50%;
+  background-repeat: no-repeat;
+  /* 아래 설정이 정확해야 로고가 이동해도 배경이 안 어긋납니다 */
+  background-size: var(--grid-w) var(--grid-h);
 }
