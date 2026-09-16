@@ -1,0 +1,141 @@
+:root {
+  --bg: #ffffff;
+  --node-idle: #d9d9d9;
+  --node-active: #000000;
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg);
+  font-family: 'Inter', -apple-system, sans-serif;
+  color: #1a1a1a;
+  overflow: hidden;
+}
+
+.brand-container {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.info {
+  padding: 40px;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  font-weight: 700;
+  text-align: center;
+}
+
+.viewport {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 3-4-3-4-3 그리드 컨테이너 */
+.grid-system {
+  position: relative;
+  width: 480px;
+  height: 380px;
+}
+
+.node {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: var(--node-idle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.6s cubic-bezier(0.2, 1, 0.3, 1);
+  cursor: pointer;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.node.active {
+  background-color: #f0f0f0; /* 마커가 올라올 때 살짝 밝아짐 */
+}
+
+.node:hover {
+  transform: scale(1.05);
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #888;
+  padding: 5px;
+  text-align: center;
+}
+
+.node.active .label {
+  color: #000;
+}
+
+.node-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.8;
+}
+
+/* 움직이는 로고 마커 (로고 이미지) */
+.logo-marker {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  z-index: 10;
+  pointer-events: none;
+  transition: transform 0.7s cubic-bezier(0.19, 1, 0.22, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-marker img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+/* 하단 입력바 */
+.footer {
+  padding-bottom: 60px;
+  display: flex;
+  justify-content: center;
+}
+
+form {
+  display: flex;
+  border-bottom: 1px solid #000;
+  padding: 5px;
+}
+
+input {
+  border: none;
+  outline: none;
+  background: transparent;
+  width: 300px;
+  font-size: 16px;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+button {
+  background: none;
+  border: none;
+  font-weight: 900;
+  cursor: pointer;
+  letter-spacing: 0.1em;
+  font-size: 12px;
+}
+
+@media (max-width: 600px) {
+  .grid-system { transform: scale(0.7); }
+}
