@@ -23,7 +23,6 @@ body {
   justify-content: center;
 }
 
-/* 3-4-3-4-3 밀집형 그리드 컨테이너 */
 .grid-system {
   position: relative;
   width: 496px; 
@@ -32,39 +31,42 @@ body {
 
 .node {
   position: absolute;
-  width: 96px; /* 20% 확대 적용 */
+  /* 원 크기 20% 확대 적용 (96px) */
+  width: 96px;
   height: 96px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.4s ease, background-image 1.2s ease-in-out, background-color 0.5s ease;
+  /* 모드 전환 시 부드러운 페이드 아웃/인 효과 */
+  transition: 
+    background-image 1.5s ease-in-out, 
+    background-color 1.5s ease-in-out,
+    transform 0.5s ease;
   cursor: pointer;
   overflow: hidden;
   background-repeat: no-repeat;
 }
 
-/* 초기 정적 로고 및 마커 내부 이미지 피팅 */
-.inner-logo, .logo-marker img {
+.logo-img, .logo-marker img {
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  object-fit: contain;
-  display: block;
+  object-fit: contain; /* 검은 원이 그리드 원에 딱 맞게 */
   border: none;
-  box-shadow: none;
 }
 
-/* 움직이는 로고 마커 */
+/* 움직이는 마커 스타일 */
 .logo-marker {
   position: absolute;
   width: 96px;
   height: 96px;
   z-index: 10;
   pointer-events: none;
-  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), opacity 1s ease;
 }
 
+/* 하단 입력바 */
 .footer {
   padding-bottom: 80px;
   display: flex;
@@ -84,6 +86,5 @@ input {
   font-size: 14px;
   text-transform: uppercase;
   text-align: center;
-  letter-spacing: 0.1em;
   background: transparent;
 }
