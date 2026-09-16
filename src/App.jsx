@@ -3,7 +3,7 @@ import './App.css';
 
 const COLUMN_STRUCTURE = [3, 4, 3, 4, 3];
 const TOTAL_NODES = 17;
-const INITIAL_LOGO_INDICES = [3, 13]; // 초기 이미지 상의 로고 위치
+const INITIAL_LOGO_INDICES = [3, 13]; 
 
 const generateGridNodes = () => {
   const nodes = [];
@@ -91,13 +91,9 @@ function App() {
     <div className="brand-container">
       <main className="viewport">
         <div className="main-grid-wrapper">
-          
-          {/* 초기 정적 레이어 */}
           <div className={`layer-static ${mode === 'static' ? 'on' : ''}`}>
             <img src="/assets/initial-grid.png" alt="Static Grid" />
           </div>
-
-          {/* 동적 인터랙션 레이어 */}
           <div className={`layer-dynamic ${mode !== 'static' ? 'on' : ''}`}>
             {nodes.map((node) => (
               <div 
@@ -112,7 +108,6 @@ function App() {
                 }}
               />
             ))}
-            
             {activeIndices.map((idx, i) => (
               <div 
                 key={`marker-${i}`}
@@ -123,10 +118,8 @@ function App() {
               </div>
             ))}
           </div>
-
         </div>
       </main>
-
       <footer className="footer">
         <form onSubmit={(e) => e.preventDefault()}>
           <input 
