@@ -1,278 +1,161 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import './App.css';
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;700&display=swap');
 
-const COLUMN_STRUCTURE = [3, 4, 3, 4, 3];
-const TOTAL_NODES = 17;
-const INITIAL_LOGO_INDICES = [3, 13]; 
-
-const generateGridNodes = () => {
-  const nodes = [];
-  const gap = 100;
-  COLUMN_STRUCTURE.forEach((rowCount, colIndex) => {
-    const offsetY = rowCount === 3 ? 50 : 0;
-    for (let i = 0; i < rowCount; i++) {
-      nodes.push({ id: nodes.length, x: colIndex * gap, y: i * gap + offsetY });
-    }
-  });
-  return nodes;
-};
-
-function App() {
-  const [view, setView] = useState('home'); // 'home' or 'internal'
-  const [activeSection, setActiveSection] = useState('everything'); // 내부 스크롤 감지용
-  const [inputText, setInputText] = useState('');
-  const [isFocused, setIsFocused] = useState(false);
-  const [nodes] = useState(generateGridNodes());
-  const [mode, setMode] = useState('static'); 
-  const [activeIndices, setActiveIndices] = useState(INITIAL_LOGO_INDICES);
-  const [currentBgImage, setCurrentBgImage] = useState('');
-  const [dotSize, setDotSize] = useState(15);
-  const [isZooming, setIsZooming] = useState(false);
-  const [selectedColor, setSelectedColor] = useState(null); 
-  const [isSloganHovered, setIsSloganHovered] = useState(false);
-
-  const canvasRef = useRef(null);
-  const imageBuffer = useRef(null);
-  const lastInteractionTime = useRef(Date.now()); 
-  const subPageActivityTime = useRef(Date.now()); 
-  const scrollContainerRef = useRef(null);
-  const inputRef = useRef(null);
-
-  // 우측 콘텐츠 섹션 참조
-  const everythingRef = useRef(null);
-  const aboutRef = useRef(null);
-  const episodeRef = useRef(null);
-
-  const preloadImage = (url) => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.src = url; img.crossOrigin = "Anonymous";
-      img.onload = () => resolve(url); img.onerror = () => resolve(url);
-    });
-  };
-
-  const fetchNewImage = async (query = '', color = null) => {
-    try {
-      const res = await fetch(`/api/images?q=${encodeURIComponent(query)}${color ? `&color=${encodeURIComponent(color)}` : ''}`);
-      const data = await res.json();
-      if (data.images && data.images.length > 0) {
-        const randomIndex = Math.floor(Math.random() * data.images.length);
-        const nextImgUrl = data.images[randomIndex];
-        await preloadImage(nextImgUrl);
-        setCurrentBgImage(nextImgUrl);
-      }
-    } catch (e) {
-      setCurrentBgImage(`https://picsum.photos/seed/nature/1200/800`);
-    }
-  };
-
-  const handleHomeInteraction = (val) => {
-    setInputText(val);
-    lastInteractionTime.current = Date.now();
-    subPageActivityTime.current = Date.now();
-    if (mode === 'static' && val.trim() !== '') setMode('interactive');
-    const timer = setTimeout(() => { if (val.trim() !== '') fetchNewImage(val); }, 600);
-    return () => clearTimeout(timer);
-  };
-
-  const moveLogos = useCallback(() => {
-    setActiveIndices(() => {
-      let first = Math.floor(Math.random() * TOTAL_NODES);
-      let second = Math.floor(Math.random() * TOTAL_NODES);
-      while (second === first) second = Math.floor(Math.random() * TOTAL_NODES);
-      return [first, second];
-    });
-  }, []);
-
-  const drawHalftone = useCallback(async () => {
-    if (view !== 'internal' || !canvasRef.current || !currentBgImage) return;
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    const img = new Image(); img.crossOrigin = "Anonymous"; img.src = currentBgImage;
-    img.onload = () => {
-      const container = canvas.parentElement;
-      canvas.width = container.clientWidth; canvas.height = container.clientHeight;
-      const scale = Math.max(canvas.width / img.width, canvas.height / img.height);
-      const x = (canvas.width / 2) - (img.width / 2) * scale;
-      const y = (canvas.height / 2) - (img.height / 2) * scale;
-      ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
-      const imageDataObj = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      imageBuffer.current = imageDataObj;
-      if (dotSize <= 1) return;
-      const data = imageDataObj.data;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      for (let h = 0; h < canvas.height; h += dotSize) {
-        for (let w = 0; w < canvas.width; w += dotSize) {
-          const i = (Math.floor(h) * canvas.width + Math.floor(w)) * 4;
-          ctx.fillStyle = `rgb(${data[i]},${data[i+1]},${data[i+2]})`;
-          ctx.beginPath(); ctx.arc(w, h, dotSize * 0.43, 0, Math.PI * 2); ctx.fill();
-        }
-      }
-    };
-  }, [view, currentBgImage, dotSize]);
-
-  useEffect(() => { if (view === 'internal') drawHalftone(); }, [drawHalftone, view]);
-
-  // 스크롤 위치에 따른 좌측 메뉴 활성화 업데이트
-  useEffect(() => {
-    if (view !== 'internal') return;
-    const handleScroll = () => {
-      const scrollPos = scrollContainerRef.current.scrollTop + 300;
-      if (episodeRef.current && scrollPos >= episodeRef.current.offsetTop) setActiveSection('episode');
-      else if (aboutRef.current && scrollPos >= aboutRef.current.offsetTop) setActiveSection('about');
-      else setActiveSection('everything');
-      subPageActivityTime.current = Date.now();
-    };
-    const container = scrollContainerRef.current;
-    container.addEventListener('scroll', handleScroll);
-    return () => container.removeEventListener('scroll', handleScroll);
-  }, [view]);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      const now = Date.now();
-      if (view === 'home' && !isFocused) {
-        const diff = (now - lastInteractionTime.current) / 1000;
-        if (mode === 'interactive' && diff >= 12) { setMode('static'); setActiveIndices(INITIAL_LOGO_INDICES); }
-        else if (mode === 'static' && diff >= 25 && diff < 55) { if (mode !== 'slideshow') { setMode('slideshow'); fetchNewImage(''); } }
-        else if (mode === 'slideshow' && diff >= 55) { setMode('static'); setActiveIndices(INITIAL_LOGO_INDICES); }
-      } else if (view !== 'home' && (now - subPageActivityTime.current) / 1000 >= 180) { setView('home'); setMode('static'); }
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [mode, view, isFocused]);
-
-  useEffect(() => {
-    if (view === 'home' && mode !== 'static' && !isFocused) {
-      const interval = setInterval(() => { moveLogos(); fetchNewImage(mode === 'slideshow' ? '' : inputText); }, 7500);
-      return () => clearInterval(interval);
-    }
-  }, [mode, view, moveLogos, isFocused, inputText]);
-
-  const scrollTo = (ref) => {
-    ref.current.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  return (
-    <div className={`app-root-container ${isSloganHovered ? 'slogan-focus-mode' : ''} view-${view}`}>
-      
-      {/* --- 홈/인트로 페이지 (기존 1시 50분 스타일 완벽 보존) --- */}
-      {view === 'home' && (
-        <div className="page-home">
-          <div className="viewport">
-            <div className="main-grid-wrapper">
-              <div className={`layer-static ${mode === 'static' ? 'on' : ''}`}><img src="/assets/initial-grid.png" alt="Static" className="pixel-perfect" /></div>
-              <div className={`layer-dynamic ${mode !== 'static' ? 'on' : ''}`}>
-                {nodes.map(n => (
-                  <div key={n.id} className="mask-circle" style={{ left: n.x, top: n.y, backgroundImage: currentBgImage ? `url(${currentBgImage})` : 'none', backgroundPosition: `-${n.x}px -${n.y}px`, backgroundSize: '496px 396px' }} />
-                ))}
-                {activeIndices.map((idx, i) => (
-                  <div key={i} className="logo-overlay-marker clickable" style={{ transform: `translate(${nodes[idx].x}px, ${nodes[idx].y}px)` }} 
-                    onClick={() => setView('internal')}>
-                    <img src="/assets/logo-reference.png" alt="Logo" />
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-          <footer className="footer-layout">
-            <div className="footer-container">
-              <div className={`dynamic-input-area ${isFocused || inputText ? 'is-active' : ''}`} onClick={() => inputRef.current?.focus()}>
-                <span className="touch-text">TOUCH</span><span className="comma-text">,</span>
-                <div className="input-field-wrapper">
-                  <input ref={inputRef} value={inputText} onFocus={() => setIsFocused(true)} onBlur={() => setIsFocused(false)} onChange={e => handleHomeInteraction(e.target.value)} autoComplete="off" spellCheck="false" />
-                  <span className="input-measure">{inputText}</span>
-                </div>
-              </div>
-              {(mode !== 'static' || inputText) && <div className="footer-hint">TOUCH SYMBOL</div>}
-            </div>
-          </footer>
-        </div>
-      )}
-
-      {/* --- 내부 페이지 (새로운 사이드 바 + 스크롤 구조) --- */}
-      {view === 'internal' && (
-        <div className="internal-layout">
-          {/* 좌측 고정 메뉴 */}
-          <aside className="internal-sidebar">
-            <div className="sidebar-group">
-              <div className="sidebar-title" onClick={() => setView('home')}>TOUCH</div>
-              <div className="sidebar-comma">,</div>
-              <nav className="sidebar-nav">
-                <button className={activeSection === 'everything' ? 'active' : ''} onClick={() => scrollTo(everythingRef)}>EVERYTHING</button>
-                <button className={activeSection === 'about' ? 'active' : ''} onClick={() => scrollTo(aboutRef)}>ABOUT</button>
-                <button className={activeSection === 'episode' ? 'active' : ''} onClick={() => scrollTo(episodeRef)}>EPISODE</button>
-              </nav>
-            </div>
-          </aside>
-
-          {/* 우측 스크롤 콘텐츠 */}
-          <main className="internal-main" ref={scrollContainerRef}>
-            {/* 1. EVERYTHING 섹션 */}
-            <section className="internal-section section-everything" ref={everythingRef}>
-              <div className={`page-everything ${isZooming ? 'zooming' : ''}`}>
-                <canvas ref={canvasRef} onClick={(e) => {
-                  if (isZooming || !imageBuffer.current) return;
-                  const rect = canvasRef.current.getBoundingClientRect();
-                  const x = Math.floor((e.clientX - rect.left) * (canvasRef.current.width / rect.width));
-                  const y = Math.floor((e.clientY - rect.top) * (canvasRef.current.height / rect.height));
-                  const data = imageBuffer.current.data;
-                  const i = (y * canvasRef.current.width + x) * 4;
-                  const hex = '#' + [data[i], data[i+1], data[i+2]].map(val => val.toString(16).padStart(2, '0')).join('');
-                  setSelectedColor(hex.toUpperCase()); setIsZooming(true);
-                  fetchNewImage(inputText, hex).then(() => { setTimeout(() => { setIsZooming(false); setSelectedColor(null); }, 2000); });
-                }} />
-                <div className="halftone-controls-outer">
-                  <div className="halftone-box">
-                    <span>DENSITY</span>
-                    <input type="range" min="1" max="60" value={dotSize} onChange={e => setDotSize(parseInt(e.target.value))} />
-                  </div>
-                </div>
-                <div className="everything-zoom-hint">
-                  {selectedColor ? <span style={{ color: selectedColor, fontWeight: '700' }}>ZOOMING INTO {selectedColor}</span> : <span style={{ color: '#888' }}>CLICK ANYWHERE TO EXPLORE COLOR</span>}
-                </div>
-              </div>
-            </section>
-
-            {/* 2. ABOUT 섹션 */}
-            <section className="internal-section" ref={aboutRef}>
-              <div className="about-editorial-wrap">
-                <p className="about-date">2026년 6월 12일, 맑음</p>
-                <h2 className="about-question">당신은 무엇에 주의를 기울이고 있나요?</h2>
-                <div className="about-body">
-                  그 어느 때보다 많은 정보와 콘텐츠에 접근할 수 있게 되었다.<br/>
-                  새로운 것을 발견하는 일은 쉬워졌지만, 정작 우리 주변의 익숙한 것들은 관심 밖으로 밀려나고 있다.<br/><br/>
-                  오늘 마주한 것들을 떠올릴 수 있을까.<br/>
-                  브랜드는 어떤 시선을 제안할 수 있을까.
-                </div>
-                <div className={`about-slogan-text ${isSloganHovered ? 'hovered' : ''}`}
-                  onMouseEnter={() => setIsSloganHovered(true)} onMouseLeave={() => setIsSloganHovered(false)}
-                >
-                  지나친 모든 것에 다시 관심을 기울일 때,<br/>
-                  평범한 일상은 새로운 발견이 된다.
-                </div>
-                <div className="about-audio-widget-inpage">
-                  <iframe width="100%" height="120" src="https://player-widget.mixcloud.com/widget/iframe/?hide_cover=1&light=1&feed=%2Fthomyorke_%2Fin-the-absence-thereof-2%2F&utm_medium=share&utm_source=embed&utm_content=show&utm_term=VXNlcjo1MzUzMTE0NA%3D%3D" frameBorder="0"></iframe>
-                </div>
-              </div>
-            </section>
-
-            {/* 3. EPISODE 섹션 */}
-            <section className="internal-section" ref={episodeRef}>
-              <div className="sub-video-container">
-                <div className="video-box"><video src="/assets/logo-loop.mp4" autoPlay loop muted playsInline className="brand-video" /></div>
-                <div className="video-box"><video src="/assets/logo-system.mp4" autoPlay loop muted playsInline className="brand-video" /></div>
-              </div>
-            </section>
-          </main>
-
-          {/* 우측 하단 홈 복귀 버튼 */}
-          <div className="home-back-btn" onClick={() => { setView('home'); setMode('static'); }}>
-            <img src="/assets/logo-reference.png" alt="Home" />
-          </div>
-        </div>
-      )}
-    </div>
-  );
+:root {
+  --node-size: 96px;
+  --grid-w: 496px;
+  --grid-h: 396px;
+  --sidebar-w: 22%; /* 좌측 비율 축소 */
+  --content-w: 78%; /* 우측 비율 확장 */
 }
 
-export default App;
+body {
+  margin: 0; background-color: #ffffff;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-weight: 400; overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.app-root-container { width: 100vw; height: 100vh; position: relative; }
+
+/* --- HOME VIEW (1:50 STABILITY) --- */
+.page-home { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; }
+.viewport { flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; padding-bottom: 10vh; }
+.main-grid-wrapper { position: relative; width: var(--grid-w); height: var(--grid-h); }
+.layer-static, .layer-dynamic { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; transition: opacity 1.5s ease-in-out; pointer-events: none; }
+.on { opacity: 1 !important; pointer-events: auto !important; z-index: 10; }
+.pixel-perfect { width: 100%; height: 100%; object-fit: fill; display: block; }
+.mask-circle { position: absolute; width: var(--node-size); height: var(--node-size); border-radius: 50%; background-repeat: no-repeat; background-size: var(--grid-w) var(--grid-h); background-color: #f9f9f9; transition: background-image 1.5s ease-in-out; }
+.logo-overlay-marker { position: absolute; width: var(--node-size); height: var(--node-size); z-index: 20; transition: transform 0.85s cubic-bezier(0.16, 1, 0.3, 1); display: flex; align-items: center; justify-content: center; }
+.logo-overlay-marker img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; transform: scale(1.02); }
+.footer-layout { position: absolute; bottom: 80px; width: 100%; display: flex; justify-content: center; }
+.dynamic-input-area { display: inline-flex; align-items: center; justify-content: center; padding: 5px 0; min-width: 0; position: relative; transition: all 0.5s ease; }
+.dynamic-input-area.is-active { border-bottom: 0.5px solid #111; }
+.touch-text { font-size: 9px; letter-spacing: 0.25em; color: #111; margin-right: -0.25em; }
+.comma-text { width: 0; opacity: 0; transition: all 0.3s ease; display: inline-block; overflow: hidden; font-size: 9px; color: #111; }
+.dynamic-input-area.is-active .comma-text { width: 7px; opacity: 1; margin-right: 2px; margin-left: 0.25em; }
+input { font-size: 9px; font-weight: 400; background: transparent; border: none; outline: none; text-transform: uppercase; letter-spacing: 0.2em; caret-color: #111; }
+.input-measure { font-size: 9px; visibility: hidden; white-space: pre; letter-spacing: 0.2em; padding-right: 5px; }
+
+/* --- INTERNAL SPLIT LAYOUT --- */
+.internal-layout { display: flex; width: 100vw; height: 100vh; background: #fff; }
+
+.internal-sidebar {
+  width: var(--sidebar-w);
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  padding-left: 5vw;
+  position: fixed;
+  left: 0; top: 0;
+  z-index: 100;
+}
+
+.sidebar-group { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.sidebar-title { font-size: 20px; font-weight: 700; cursor: pointer; letter-spacing: -0.01em; }
+.sidebar-comma { font-size: 18px; color: #eee; margin-top: -8px; margin-bottom: 8px; transition: color 0.4s; }
+.sidebar-comma.active { color: #000; } /* 쉼표 인덱스 활성화 */
+
+.sidebar-nav { display: flex; flex-direction: column; gap: 8px; }
+.sidebar-nav button {
+  background: none; border: none; padding: 0; text-align: left;
+  font-family: 'IBM Plex Sans', sans-serif; font-weight: 700; font-size: 16px;
+  color: #eee; cursor: pointer; transition: color 0.3s;
+}
+.sidebar-nav button.active, .sidebar-nav button:hover { color: #000; }
+
+/* 우측 콘텐츠 영역 확장 */
+.internal-main {
+  width: var(--content-w);
+  height: 100vh;
+  margin-left: var(--sidebar-w);
+  overflow-y: scroll;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+}
+.internal-main::-webkit-scrollbar { display: none; }
+
+.internal-section {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 0;
+}
+
+/* OVERVIEW SLOGAN STYLE (desktop-10.jpg 반영) */
+.main-slogan {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #000;
+  text-align: center;
+}
+
+/* EVERYTHING FRAME STYLE (desktop-11.jpg 반영) */
+.everything-frame {
+  width: 85%;
+  max-width: 900px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.page-everything {
+  width: 100%;
+  aspect-ratio: 16 / 9; /* 시각적 프레임 비율 고정 */
+  position: relative;
+  overflow: hidden;
+  background: #fcfcfc;
+  border: 0.5px solid #eee; /* 아주 미세한 프레임 선 */
+}
+
+canvas { display: block; width: 100%; height: 100%; }
+
+/* [수정] 덴시티 바 소형화 및 정중앙 배치 */
+.halftone-controls-outer {
+  position: absolute;
+  bottom: 25px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+.page-everything:hover .halftone-controls-outer { opacity: 1; }
+
+.halftone-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 15px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+  border-radius: 4px;
+}
+.halftone-box span { font-size: 7px; font-weight: 700; letter-spacing: 0.1em; color: #555; }
+.halftone-box input[type="range"] { width: 70px; height: 1px; -webkit-appearance: none; background: #eee; outline: none; }
+.halftone-box input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 6px; height: 6px; background: #000; border-radius: 50%; }
+
+.everything-zoom-hint { font-size: 9px; letter-spacing: 0.2em; color: #bbb; text-transform: uppercase; }
+
+/* ABOUT & EPISODE */
+.about-editorial-wrap { display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 500px; }
+.about-date { font-size: 11px; color: #999; margin-bottom: 25px; }
+.about-question { font-size: 22px; font-weight: 700; margin-bottom: 35px; }
+.about-body { font-size: 13px; line-height: 2.2; color: #444; }
+.about-slogan-text { margin-top: 80px; padding: 30px; font-size: 15px; font-weight: 700; transition: all 0.8s ease; margin-bottom: 80px; }
+
+.sub-video-container { display: flex; flex-direction: column; gap: 80px; align-items: center; }
+.video-box { width: var(--grid-w); height: var(--grid-h); background: #f8f8f8; }
+.brand-video { width: 100%; height: 100%; object-fit: cover; }
+
+.home-back-btn { position: fixed; right: 30px; bottom: 30px; width: 45px; height: 45px; z-index: 500; cursor: pointer; }
+.home-back-btn img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+
+.slogan-focus-mode .internal-layout, .slogan-focus-mode .internal-section { background-color: #000; }
+.slogan-focus-mode .about-slogan-text { color: #fff; transform: scale(1.03); }
+.slogan-focus-mode .internal-sidebar, .slogan-focus-mode .about-date, .slogan-focus-mode .about-question, .slogan-focus-mode .about-body, .slogan-focus-mode .home-back-btn { opacity: 0 !important; pointer-events: none; }
