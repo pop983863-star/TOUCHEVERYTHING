@@ -19,7 +19,7 @@ const generateGridNodes = () => {
 
 function App() {
   const [view, setView] = useState('home'); 
-  const [activeSection, setActiveSection] = useState('overview'); 
+  const [activeSection, setActiveSection] = useState('empty'); 
   const [inputText, setInputText] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [nodes] = useState(generateGridNodes());
@@ -39,6 +39,7 @@ function App() {
   const inputRef = useRef(null);
 
   // 섹션 참조용 Refs
+  const emptyRef = useRef(null);
   const overviewRef = useRef(null);
   const everythingRef = useRef(null);
   const aboutRef = useRef(null);
@@ -91,8 +92,7 @@ function App() {
     const img = new Image(); img.crossOrigin = "Anonymous"; img.src = currentBgImage;
     img.onload = () => {
       const container = canvas.parentElement;
-      canvas.width = container.clientWidth; 
-      canvas.height = container.clientHeight;
+      canvas.width = container.clientWidth; canvas.height = container.clientHeight;
       const scale = Math.max(canvas.width / img.width, canvas.height / img.height);
       const x = (canvas.width / 2) - (img.width / 2) * scale;
       const y = (canvas.height / 2) - (img.height / 2) * scale;
@@ -114,6 +114,7 @@ function App() {
 
   useEffect(() => { if (view === 'internal') drawHalftone(); }, [drawHalftone, view, currentBgImage, dotSize]);
 
+  // 스크롤 감지 로직 업데이트
   useEffect(() => {
     if (view !== 'internal') return;
     const handleScroll = () => {
@@ -121,7 +122,8 @@ function App() {
       if (episodeRef.current && scrollPos >= episodeRef.current.offsetTop) setActiveSection('episode');
       else if (aboutRef.current && scrollPos >= aboutRef.current.offsetTop) setActiveSection('about');
       else if (everythingRef.current && scrollPos >= everythingRef.current.offsetTop) setActiveSection('everything');
-      else setActiveSection('overview');
+      else if (overviewRef.current && scrollPos >= overviewRef.current.offsetTop) setActiveSection('overview');
+      else setActiveSection('empty');
       subPageActivityTime.current = Date.now();
     };
     const container = scrollContainerRef.current;
@@ -130,11 +132,24 @@ function App() {
   }, [view]);
 
   useEffect(() => {
-    if (view === 'home' && mode !== 'static') {
+    const timer = setInterval(() => {
+      const now = Date.now();
+      if (view === 'home' && !isFocused) {
+        const diff = (now - lastInteractionTime.current) / 1000;
+        if (mode === 'interactive' && diff >= 12) { setMode('static'); setActiveIndices(INITIAL_LOGO_INDICES); }
+        else if (mode === 'static' && diff >= 25 && diff < 55) { if (mode !== 'slideshow') { setMode('slideshow'); fetchNewImage(''); } }
+        else if (mode === 'slideshow' && diff >= 55) { setMode('static'); setActiveIndices(INITIAL_LOGO_INDICES); }
+      } else if (view !== 'home' && (now - subPageActivityTime.current) / 1000 >= 180) { setView('home'); setMode('static'); }
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [mode, view, isFocused]);
+
+  useEffect(() => {
+    if (view === 'home' && mode !== 'static' && !isFocused) {
       const interval = setInterval(moveLogos, 5000);
       return () => clearInterval(interval);
     }
-  }, [mode, view, moveLogos]);
+  }, [mode, view, moveLogos, isFocused]);
 
   const scrollTo = (ref) => {
     ref.current.scrollIntoView({ behavior: 'smooth' });
@@ -143,7 +158,7 @@ function App() {
   return (
     <div className={`app-root-container ${isSloganHovered ? 'slogan-focus-mode' : ''} view-${view}`}>
       
-      {/* 1. 홈 화면 (인트로 그리드) */}
+      {/* 1. 홈/인트로 화면 */}
       {view === 'home' && (
         <div className="page-home">
           <div className="viewport">
@@ -182,8 +197,10 @@ function App() {
         <div className="internal-layout">
           <aside className="internal-sidebar">
             <div className="sidebar-group">
-              <div className="sidebar-title" onClick={() => setView('home')}>TOUCH</div>
-              <div className={`sidebar-comma ${activeSection !== 'overview' ? 'active' : ''}`}>,</div>
+              {/* TOUCH 클릭 시 맨 위 빈 화면으로 이동 */}
+              <div className={`sidebar-title ${activeSection === 'empty' ? 'active' : ''}`} onClick={() => scrollTo(emptyRef)}>TOUCH</div>
+              {/* 쉼표(,) 클릭 시 슬로건 섹션으로 이동 */}
+              <div className={`sidebar-comma ${activeSection === 'overview' ? 'active' : ''}`} onClick={() => scrollTo(overviewRef)}>,</div>
               <nav className="sidebar-nav">
                 <button className={activeSection === 'everything' ? 'active' : ''} onClick={() => scrollTo(everythingRef)}>EVERYTHING</button>
                 <button className={activeSection === 'about' ? 'active' : ''} onClick={() => scrollTo(aboutRef)}>ABOUT</button>
@@ -194,12 +211,15 @@ function App() {
 
           <main className="internal-main" ref={scrollContainerRef}>
             
-            {/* 섹션 0: OVERVIEW (슬로건 기반) */}
+            {/* 섹션 1: TOUCH 전용 빈 화면 */}
+            <section className="internal-section section-empty" ref={emptyRef}></section>
+
+            {/* 섹션 2: 쉼표(,) 전용 슬로건 화면 */}
             <section className="internal-section section-overview" ref={overviewRef}>
                <h1 className="main-slogan">REDISCOVER THE ORDINARY</h1>
             </section>
 
-            {/* 섹션 1: EVERYTHING (망점 프레임) */}
+            {/* 섹션 3: EVERYTHING */}
             <section className="internal-section" ref={everythingRef}>
               <div className="everything-frame">
                 <div className={`page-everything ${isZooming ? 'zooming' : ''}`}>
@@ -222,18 +242,18 @@ function App() {
                   </div>
                 </div>
                 <div className="everything-zoom-hint">
-                  {selectedColor ? <span style={{ color: selectedColor }}>ZOOMING INTO {selectedColor}</span> : <span>CLICK ANYWHERE TO EXPLORE COLOR</span>}
+                  {selectedColor ? <span style={{ color: selectedColor, fontWeight: '700' }}>ZOOMING INTO {selectedColor}</span> : <span>CLICK ANYWHERE TO EXPLORE COLOR</span>}
                 </div>
               </div>
             </section>
 
-            {/* 섹션 2: ABOUT */}
+            {/* 섹션 4: ABOUT */}
             <section className="internal-section" ref={aboutRef}>
               <div className="about-editorial-wrap">
                 <p className="about-date">2026년 6월 12일, 맑음</p>
                 <h2 className="about-question">당신은 무엇에 주의를 기울이고 있나요?</h2>
                 <div className="about-body">
-                <br/>
+                  그 어느 때보다 많은 정보와 콘텐츠에 접근할 수 있게 되었다.<br/>
                   새로운 것을 발견하는 일은 쉬워졌지만, 정작 우리 주변의 익숙한 것들은 관심 밖으로 밀려나고 있다.<br/><br/>
                   오늘 마주한 것들을 떠올릴 수 있을까.<br/>
                   브랜드는 어떤 시선을 제안할 수 있을까.
@@ -250,7 +270,7 @@ function App() {
               </div>
             </section>
 
-            {/* 섹션 3: EPISODE */}
+            {/* 섹션 5: EPISODE */}
             <section className="internal-section" ref={episodeRef}>
               <div className="sub-video-container">
                 <div className="video-box"><video src="/assets/logo-loop.mp4" autoPlay loop muted playsInline className="brand-video" /></div>
