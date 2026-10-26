@@ -5,6 +5,7 @@ const COLUMN_STRUCTURE = [3, 4, 3, 4, 3];
 const TOTAL_NODES = 17;
 const INITIAL_LOGO_INDICES = [3, 13]; 
 
+// 에피소드 데이터
 const EPISODE_DATA = [
   { id: 1, text: "보이지 않지만 언제나 곁은 지나간다." },
   { id: 2, text: "시간과 공간을 기억하며" },
@@ -39,7 +40,6 @@ function App() {
   const [isZooming, setIsZooming] = useState(false);
   const [selectedColor, setSelectedColor] = useState(null); 
   const [isSloganHovered, setIsSloganHovered] = useState(false);
-  const [isShuffling, setIsShuffling] = useState(false);
 
   const canvasRef = useRef(null);
   const imageBuffer = useRef(null);
@@ -48,17 +48,6 @@ function App() {
   const scrollContainerRef = useRef(null);
   const inputRef = useRef(null);
   const inputTimeout = useRef(null);
-
-  // 영상 재생 강제 실행을 위한 Refs
-  const v1 = useRef(null);
-  const v2 = useRef(null);
-
-  useEffect(() => {
-    if (view === 'internal' && activeSection === 'empty') {
-      if (v1.current) v1.current.play().catch(() => {});
-      if (v2.current) v2.current.play().catch(() => {});
-    }
-  }, [view, activeSection]);
 
   const preloadImage = (url) => {
     return new Promise((resolve) => {
@@ -83,29 +72,23 @@ function App() {
     }
   };
 
+  const handleHomeInteraction = (val) => {
+    setInputText(val);
+    lastInteractionTime.current = Date.now();
+    subPageActivityTime.current = Date.now();
+    if (mode === 'static' && val.trim() !== '') setMode('interactive');
+    if (inputTimeout.current) clearTimeout(inputTimeout.current);
+    inputTimeout.current = setTimeout(() => { if (val.trim() !== '') fetchNewImage(val); }, 600);
+  };
+
   const moveLogos = useCallback(() => {
-    setIsShuffling(true);
     setActiveIndices(() => {
       let first = Math.floor(Math.random() * TOTAL_NODES);
       let second = Math.floor(Math.random() * TOTAL_NODES);
       while (second === first) second = Math.floor(Math.random() * TOTAL_NODES);
       return [first, second];
     });
-    setTimeout(() => setIsShuffling(false), 600);
   }, []);
-
-  const handleHomeInteraction = (val) => {
-    setInputText(val);
-    lastInteractionTime.current = Date.now();
-    if (mode === 'static' && val.trim() !== '') setMode('interactive');
-    if (inputTimeout.current) clearTimeout(inputTimeout.current);
-    inputTimeout.current = setTimeout(() => { if (val.trim() !== '') fetchNewImage(val); }, 600);
-  };
-
-  const backToHome = () => {
-    setView('home'); setMode('static'); setInputText('');
-    setActiveIndices(INITIAL_LOGO_INDICES); lastInteractionTime.current = Date.now();
-  };
 
   const drawHalftone = useCallback(async () => {
     if (view !== 'internal' || !canvasRef.current || !currentBgImage) return;
@@ -114,7 +97,6 @@ function App() {
     const img = new Image(); img.crossOrigin = "Anonymous"; img.src = currentBgImage;
     img.onload = () => {
       const container = canvas.parentElement;
-      if (!container) return;
       canvas.width = container.clientWidth; canvas.height = container.clientHeight;
       const scale = Math.max(canvas.width / img.width, canvas.height / img.height);
       const x = (canvas.width / 2) - (img.width / 2) * scale;
@@ -164,10 +146,13 @@ function App() {
       const now = Date.now();
       if (view === 'home' && !isFocused) {
         const diff = (now - lastInteractionTime.current) / 1000;
-        if (mode === 'interactive' && diff >= 10) { setMode('static'); setActiveIndices(INITIAL_LOGO_INDICES); setInputText(''); }
-        else if (mode === 'static' && diff >= 10) { setMode('auto-slideshow'); fetchNewImage('nature,forest'); }
-        else if (mode === 'auto-slideshow' && diff >= 25) { setMode('static'); setActiveIndices(INITIAL_LOGO_INDICES); lastInteractionTime.current = Date.now(); }
-      } else if (view !== 'home' && (now - subPageActivityTime.current) / 1000 >= 180) { backToHome(); }
+        if (mode === 'interactive' && diff >= 12) { setMode('static'); setActiveIndices(INITIAL_LOGO_INDICES); setInputText(''); }
+        else if (mode === 'static' && diff >= 25 && diff < 55) { if (mode !== 'slideshow') { setMode('slideshow'); fetchNewImage(''); } }
+        else if (mode === 'slideshow' && diff >= 55) { setMode('static'); setActiveIndices(INITIAL_LOGO_INDICES); }
+      } else if (view !== 'home' && (now - subPageActivityTime.current) / 1000 >= 180) { 
+        // 튕김 해결: 복귀 시 상태 완전 초기화
+        setView('home'); setMode('static'); setInputText(''); setActiveIndices(INITIAL_LOGO_INDICES);
+      }
     }, 1000);
     return () => clearInterval(timer);
   }, [mode, view, isFocused]);
@@ -196,7 +181,10 @@ function App() {
                   <div key={n.id} className="mask-circle" style={{ left: n.x, top: n.y, backgroundImage: currentBgImage ? `url(${currentBgImage})` : 'none', backgroundPosition: `-${n.x}px -${n.y}px`, backgroundSize: '496px 396px' }} />
                 ))}
                 {activeIndices.map((idx, i) => (
-                  <div key={i} className={`logo-overlay-marker clickable ${isShuffling ? 'shuffling' : ''}`} style={{ transform: `translate(${nodes[idx].x}px, ${nodes[idx].y}px)` }} onClick={() => setView('internal')}><img src="/assets/logo-reference.png" alt="Logo" /></div>
+                  <div key={i} className="logo-overlay-marker clickable" style={{ transform: `translate(${nodes[idx].x}px, ${nodes[idx].y}px)` }} 
+                    onClick={() => setView('internal')}>
+                    <img src="/assets/logo-reference.png" alt="Logo" />
+                  </div>
                 ))}
               </div>
             </div>
@@ -229,22 +217,28 @@ function App() {
               </nav>
             </div>
           </aside>
+
           <main className="internal-main" ref={scrollContainerRef}>
             <section className="internal-section" ref={emptyRef}>
-              <div className="internal-home-video-row scaled-wide">
+              {/* [수정] 좌측 system, 우측 loop 가로 배치 (1.5x 확대) */}
+              <div className="internal-home-video-row scaled-row">
                 <div className="video-box-large">
-                  <video ref={v1} autoPlay loop muted playsInline className="brand-video">
+                  <video key="system" autoPlay loop muted playsInline className="brand-video">
                     <source src="/assets/logo-system.mp4" type="video/mp4" />
                   </video>
                 </div>
                 <div className="video-box-large">
-                  <video ref={v2} autoPlay loop muted playsInline className="brand-video">
+                  <video key="loop" autoPlay loop muted playsInline className="brand-video">
                     <source src="/assets/logo-loop.mp4" type="video/mp4" />
                   </video>
                 </div>
               </div>
             </section>
-            <section className="internal-section section-overview" ref={overviewRef}><h1 className="main-slogan">REDISCOVER THE ORDINARY</h1></section>
+
+            <section className="internal-section section-overview" ref={overviewRef}>
+               <h1 className="main-slogan">REDISCOVER THE ORDINARY</h1>
+            </section>
+
             <section className="internal-section" ref={everythingRef}>
               <div className="everything-frame">
                 <div className={`page-everything ${isZooming ? 'zooming' : ''}`}>
@@ -259,38 +253,63 @@ function App() {
                     setSelectedColor(hex.toUpperCase()); setIsZooming(true);
                     fetchNewImage(inputText, hex).then(() => { setTimeout(() => { setIsZooming(false); setSelectedColor(null); }, 2000); });
                   }} />
-                  <div className="halftone-controls-outer"><div className="halftone-box"><span>DENSITY</span><input type="range" min="1" max="60" value={dotSize} onChange={e => setDotSize(parseInt(e.target.value))} /></div></div>
+                  <div className="halftone-controls-outer">
+                    <div className="halftone-box">
+                      <span>DENSITY</span>
+                      <input type="range" min="1" max="60" value={dotSize} onChange={e => setDotSize(parseInt(e.target.value))} />
+                    </div>
+                  </div>
                 </div>
-                <div className="everything-zoom-hint-inline">{selectedColor ? <span style={{ color: selectedColor, fontWeight: '700' }}>ZOOMING INTO {selectedColor}</span> : <span>CLICK ANYWHERE TO EXPLORE COLOR</span>}</div>
+                <div className="everything-zoom-hint-inline">
+                  {selectedColor ? <span style={{ color: selectedColor, fontWeight: '700' }}>ZOOMING INTO {selectedColor}</span> : <span>CLICK ANYWHERE TO EXPLORE COLOR</span>}
+                </div>
               </div>
             </section>
+
             <section className="internal-section" ref={aboutRef}>
               <div className="about-editorial-wrap">
                 <p className="about-date">2026년 6월 12일, 맑음</p>
                 <h2 className="about-question">당신은 무엇에 주의를 기울이고 있나요?</h2>
-                <div className="about-body">그 어느 때보다 많은 정보와 콘텐츠에 접근할 수 있게 되었다.<br/>새로운 것을 발견하는 일은 쉬워졌지만, 정작 우리 주변의 익숙한 것들은 관심 밖으로 밀려나고 있다.<br/><br/>오늘 마주한 것들을 떠올릴 수 있을까.<br/>브랜드는 어떤 시선을 제안할 수 있을까.</div>
-                <div className={`about-slogan-text ${isSloganHovered ? 'hovered' : ''}`} onMouseEnter={() => setIsSloganHovered(true)} onMouseLeave={() => setIsSloganHovered(false)}>지나친 모든 것에 다시 관심을 기울일 때,<br/>평범한 일상은 새로운 발견이 된다.</div>
-                <div className="about-audio-widget-inpage"><iframe width="100%" height="120" src="https://player-widget.mixcloud.com/widget/iframe/?hide_cover=1&light=1&feed=%2Fthomyorke_%2Fin-the-absence-thereof-2%2F" frameBorder="0"></iframe></div>
+                <div className="about-body">
+                  그 어느 때보다 많은 정보와 콘텐츠에 접근할 수 있게 되었다.<br/>
+                  새로운 것을 발견하는 일은 쉬워졌지만, 정작 우리 주변의 익숙한 것들은 관심 밖으로 밀려나고 있다.<br/><br/>
+                  오늘 마주한 것들을 떠올릴 수 있을까.<br/>
+                  브랜드는 어떤 시선을 제안할 수 있을까.
+                </div>
+                <div className={`about-slogan-text ${isSloganHovered ? 'hovered' : ''}`}
+                  onMouseEnter={() => setIsSloganHovered(true)} onMouseLeave={() => setIsSloganHovered(false)}
+                >
+                  지나친 모든 것에 다시 관심을 기울일 때,<br/>
+                  평범한 일상은 새로운 발견이 된다.
+                </div>
+                <div className="about-audio-widget-inpage">
+                  <iframe width="100%" height="120" src="https://player-widget.mixcloud.com/widget/iframe/?hide_cover=1&light=1&feed=%2Fthomyorke_%2Fin-the-absence-thereof-2%2F" frameBorder="0"></iframe>
+                </div>
               </div>
             </section>
+
             <section className="internal-section section-episode" ref={episodeRef}>
-              <div className="episode-image-grid">
-                {EPISODE_DATA.map(item => (
-                  <div key={item.id} className="episode-img-box">
-                    <img src={`/assets/${item.id}.png`} alt={`Episode ${item.id}`} />
-                    <div className="episode-hover-overlay">
-                       <p>{item.text}</p>
+               {/* [수정] 에피소드 그리드 및 호버 오버레이 */}
+               <div className="episode-image-grid">
+                  {EPISODE_DATA.map(item => (
+                    <div key={item.id} className="episode-item">
+                      <img src={`/assets/${item.id}.png`} alt={`Episode ${item.id}`} />
+                      <div className="episode-overlay">
+                        <p className="overlay-text">{item.text}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-              <div className="episode-footer-text">
+                  ))}
+               </div>
+               <div className="episode-footer-text">
                 <p className="en">TOUCH, EVERYTHING is a subscription-based service that introduces new lifestyle experiences each month through curated themes and items.</p>
                 <p className="kr">터치 에브리띵은 구독제로 운영되는 서비스이며, 매달 테마와 아이템을 통해 새로운 라이프스타일 경험을 제안합니다.</p>
-              </div>
+               </div>
             </section>
           </main>
-          <div className="home-back-btn" onClick={backToHome}><img src="/assets/logo-reference.png" alt="Home" /></div>
+
+          <div className="home-back-btn" onClick={() => setView('home')}>
+            <img src="/assets/logo-reference.png" alt="Home" />
+          </div>
         </div>
       )}
     </div>
