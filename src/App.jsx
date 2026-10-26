@@ -5,6 +5,15 @@ const COLUMN_STRUCTURE = [3, 4, 3, 4, 3];
 const TOTAL_NODES = 17;
 const INITIAL_LOGO_INDICES = [3, 13]; 
 
+const EPISODE_DATA = [
+  { id: 1, text: "보이지 않지만 언제나 곁은 지나간다." },
+  { id: 2, text: "시간과 공간을 기억하며" },
+  { id: 3, text: "빛나는 시간과 평온함" },
+  { id: 4, text: "가지 않은 길" },
+  { id: 5, text: "비로소 보이는 것들" },
+  { id: 6, text: "구독을 통해 매월 테마와 아이템이 공개됩니다." }
+];
+
 const generateGridNodes = () => {
   const nodes = [];
   const gap = 100;
@@ -30,7 +39,6 @@ function App() {
   const [isZooming, setIsZooming] = useState(false);
   const [selectedColor, setSelectedColor] = useState(null); 
   const [isSloganHovered, setIsSloganHovered] = useState(false);
-  const [isShuffling, setIsShuffling] = useState(false);
 
   const canvasRef = useRef(null);
   const imageBuffer = useRef(null);
@@ -40,6 +48,7 @@ function App() {
   const inputRef = useRef(null);
   const inputTimeout = useRef(null);
 
+  const overviewRef = useRef(null);
   const everythingRef = useRef(null);
   const aboutRef = useRef(null);
   const experienceRef = useRef(null);
@@ -70,17 +79,14 @@ function App() {
   };
 
   const moveLogos = useCallback(() => {
-    setIsShuffling(true);
     setActiveIndices(() => {
       let first = Math.floor(Math.random() * TOTAL_NODES);
       let second = Math.floor(Math.random() * TOTAL_NODES);
       while (second === first) second = Math.floor(Math.random() * TOTAL_NODES);
       return [first, second];
     });
-    setTimeout(() => setIsShuffling(false), 800);
   }, []);
 
-  // [추가] 인트로 로고 10초 무한 셔플
   useEffect(() => {
     const shuffleInterval = setInterval(() => {
       if (view === 'home') moveLogos();
@@ -103,6 +109,7 @@ function App() {
     const img = new Image(); img.crossOrigin = "Anonymous"; img.src = currentBgImage;
     img.onload = () => {
       const container = canvas.parentElement;
+      if (!container) return;
       canvas.width = container.clientWidth; canvas.height = container.clientHeight;
       const scale = Math.max(canvas.width / img.width, canvas.height / img.height);
       const x = (canvas.width / 2) - (img.width / 2) * scale;
@@ -146,9 +153,9 @@ function App() {
       const now = Date.now();
       if (view === 'home' && !isFocused) {
         const diff = (now - lastInteractionTime.current) / 1000;
-        if (mode === 'interactive' && diff >= 12) { setMode('static'); setActiveIndices(INITIAL_LOGO_INDICES); setInputText(''); }
-        else if (mode === 'static' && diff >= 25 && diff < 55) { if (mode !== 'slideshow') { setMode('slideshow'); fetchNewImage(''); } }
-        else if (mode === 'slideshow' && diff >= 55) { setMode('static'); setActiveIndices(INITIAL_LOGO_INDICES); }
+        if (mode === 'interactive' && diff >= 12) { setMode('static'); setInputText(''); }
+        else if (mode === 'static' && diff >= 25 && diff < 55) { if (mode !== 'slideshow') { setMode('slideshow'); fetchNewImage('minimal'); } }
+        else if (mode === 'slideshow' && diff >= 55) { setMode('static'); lastInteractionTime.current = Date.now(); }
       } else if (view !== 'home' && (now - subPageActivityTime.current) / 1000 >= 180) { setView('home'); setMode('static'); }
     }, 1000);
     return () => clearInterval(timer);
@@ -171,7 +178,7 @@ function App() {
                   <div key={n.id} className="mask-circle" style={{ left: n.x, top: n.y, backgroundImage: currentBgImage ? `url(${currentBgImage})` : 'none', backgroundPosition: `-${n.x}px -${n.y}px`, backgroundSize: '496px 396px' }} />
                 ))}
                 {activeIndices.map((idx, i) => (
-                  <div key={i} className={`logo-overlay-marker clickable ${isShuffling ? 'shuffling' : ''}`} style={{ transform: `translate(${nodes[idx].x}px, ${nodes[idx].y}px)` }} 
+                  <div key={i} className="logo-overlay-marker clickable" style={{ transform: `translate(${nodes[idx].x}px, ${nodes[idx].y}px)` }} 
                     onClick={() => setView('internal')}>
                     <img src="/assets/logo-reference.png" alt="Logo" />
                   </div>
@@ -199,7 +206,7 @@ function App() {
           <aside className="internal-sidebar">
             <div className="sidebar-group">
               <div className="sidebar-title" onClick={() => setView('home')}>TOUCH</div>
-              <div className={`sidebar-comma ${activeSection !== 'overview' ? 'active' : ''}`}>,</div>
+              <div className={`sidebar-comma ${activeSection === 'overview' ? 'active' : ''}`} onClick={() => scrollTo(overviewRef)}>,</div>
               <nav className="sidebar-nav">
                 <button className={activeSection === 'everything' ? 'active' : ''} onClick={() => scrollTo(everythingRef)}>EVERYTHING</button>
                 <button className={activeSection === 'about' ? 'active' : ''} onClick={() => scrollTo(aboutRef)}>ABOUT</button>
@@ -210,6 +217,15 @@ function App() {
           </aside>
 
           <main className="internal-main" ref={scrollContainerRef}>
+            {/* [수정] 쉼표(,) 섹션: 영상 2개 가로 배치 + 슬로건 */}
+            <section className="internal-section section-overview" ref={overviewRef}>
+              <div className="internal-home-video-row scaled-row">
+                <div className="video-box-large"><video autoPlay loop muted playsInline className="brand-video"><source src="/assets/logo-system.mp4" type="video/mp4" /></video></div>
+                <div className="video-box-large"><video autoPlay loop muted playsInline className="brand-video"><source src="/assets/logo-loop.mp4" type="video/mp4" /></video></div>
+              </div>
+              <h1 className="main-slogan">REDISCOVER THE ORDINARY</h1>
+            </section>
+
             <section className="internal-section" ref={everythingRef}>
               <div className="everything-frame">
                 <div className={`page-everything ${isZooming ? 'zooming' : ''}`}>
@@ -232,6 +248,9 @@ function App() {
 
             <section className="internal-section" ref={aboutRef}>
               <div className="about-editorial-wrap">
+                {/* [수정] About 페이지 기존 헤더 복원 */}
+                <p className="about-date">2026년 6월 12일, 맑음</p>
+                <h2 className="about-question">당신은 무엇에 주의를 기울이고 있나요?</h2>
                 <p className="about-body">
                   그 어느 때보다 많은 정보와 콘텐츠가 우리의 삶을 풍족하게 해주고 있다.<br/>
                   새로운 것을 발견하는 일은 쉬워졌지만, 정작 우리 주변의 익숙한 것들은 관심 밖으로 밀려나고 있다.<br/><br/>
@@ -247,13 +266,19 @@ function App() {
             </section>
 
             <section className="internal-section" ref={experienceRef}>
-               <div className="experience-img-frame">
-                  <img src="/assets/ex.png" alt="Experience" />
-               </div>
+               <div className="experience-img-frame"><img src="/assets/ex.png" alt="Experience" /></div>
             </section>
 
-            <section className="internal-section" ref={episodeRef}>
-              <div className="episode-image-grid">{[1,2,3,4,5,6].map(num => (<div key={num} className="episode-item"><img src={`/assets/${num}.png`} alt={`Episode ${num}`} /><div className="episode-overlay"><p className="overlay-text">STORY {num}</p></div></div>))}</div>
+            {/* [수정] EPISODE 섹션: 하나씩 6열(1열 리스트) 세로 배열 */}
+            <section className="internal-section section-episode" ref={episodeRef}>
+              <div className="episode-vertical-list">
+                {EPISODE_DATA.map(item => (
+                  <div key={item.id} className="episode-item-wide">
+                    <img src={`/assets/${item.id}.png`} alt={`Episode ${item.id}`} />
+                    <div className="episode-overlay"><p className="overlay-text">{item.text}</p></div>
+                  </div>
+                ))}
+              </div>
               <div className="episode-footer-text">
                 <p>TOUCH, EVERYTHING is a subscription-based service that introduces new lifestyle experiences each month through curated themes and items.</p>
                 <p>터치 에브리띵은 구독제로 운영되는 서비스이며, 매달 테마와 아이템을 통해 새로운 라이프스타일 경험을 제안합니다.</p>
