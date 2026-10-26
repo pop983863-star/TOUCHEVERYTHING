@@ -49,12 +49,6 @@ function App() {
   const inputRef = useRef(null);
   const inputTimeout = useRef(null);
 
-  const overviewRef = useRef(null);
-  const everythingRef = useRef(null);
-  const aboutRef = useRef(null);
-  const experienceRef = useRef(null);
-  const episodeRef = useRef(null);
-
   const preloadImage = (url) => {
     return new Promise((resolve) => {
       const img = new Image();
@@ -135,6 +129,12 @@ function App() {
 
   useEffect(() => { if (view === 'internal') drawHalftone(); }, [drawHalftone, view, currentBgImage, dotSize]);
 
+  const overviewRef = useRef(null);
+  const everythingRef = useRef(null);
+  const aboutRef = useRef(null);
+  const experienceRef = useRef(null);
+  const episodeRef = useRef(null);
+
   useEffect(() => {
     if (view !== 'internal') return;
     const handleScroll = () => {
@@ -143,8 +143,7 @@ function App() {
       else if (experienceRef.current && scrollPos >= experienceRef.current.offsetTop) setActiveSection('experience');
       else if (aboutRef.current && scrollPos >= aboutRef.current.offsetTop) setActiveSection('about');
       else if (everythingRef.current && scrollPos >= everythingRef.current.offsetTop) setActiveSection('everything');
-      else if (overviewRef.current && scrollPos >= overviewRef.current.offsetTop) setActiveSection('overview');
-      else setActiveSection('empty');
+      else setActiveSection('overview');
       subPageActivityTime.current = Date.now();
     };
     const container = scrollContainerRef.current;
@@ -170,7 +169,6 @@ function App() {
   };
 
   return (
-    /* [수정] view가 바뀔 때 전체적으로 페이드 효과를 주어 부드럽게 전환 */
     <div key={view} className={`app-root-container ${isSloganHovered ? 'slogan-focus-mode' : ''} view-${view} view-fade-in`}>
       
       {view === 'home' && (
@@ -183,10 +181,7 @@ function App() {
                   <div key={n.id} className="mask-circle" style={{ left: n.x, top: n.y, backgroundImage: currentBgImage ? `url(${currentBgImage})` : 'none', backgroundPosition: `-${n.x}px -${n.y}px`, backgroundSize: '496px 396px' }} />
                 ))}
                 {activeIndices.map((idx, i) => (
-                  <div key={i} className={`logo-overlay-marker clickable ${isShuffling ? 'shuffling' : ''}`} style={{ transform: `translate(${nodes[idx].x}px, ${nodes[idx].y}px)` }} 
-                    onClick={() => setView('internal')}>
-                    <img src="/assets/logo-reference.png" alt="Logo" />
-                  </div>
+                  <div key={i} className={`logo-overlay-marker clickable ${isShuffling ? 'shuffling' : ''}`} style={{ transform: `translate(${nodes[idx].x}px, ${nodes[idx].y}px)` }} onClick={() => setView('internal')}><img src="/assets/logo-reference.png" alt="Logo" /></div>
                 ))}
               </div>
             </div>
@@ -254,9 +249,9 @@ function App() {
               <div className="about-editorial-wrap">
                 <p className="about-date">2026년 6월 12일, 맑음</p>
                 <h2 className="about-question">당신은 무엇에 주의를 기울이고 있나요?</h2>
+                {/* [수정] 요청하신 문구 적용 및 가로 너비 확보를 위한 구조 */}
                 <p className="about-body">
                   그 어느 때보다 많은 정보와 콘텐츠가 우리의 삶을 풍족하게 해주고 있다.<br/>
-                  {/* [수정] "밀려나고 있다." 다음 줄로 내림 */}
                   새로운 정보와 즐거움을 찾기 쉬워졌지만, 우연히 발견하게 되는 일상의 즐거움은 어디로 갔을까.<br/><br/>
                   오늘 마주한 것들을 떠올릴 수 있을까.<br/>
                   브랜드는 어떤 시선을 제안할 수 있을까.<br/>
@@ -283,7 +278,6 @@ function App() {
                 ))}
               </div>
               <div className="episode-footer-text">
-                {/* [수정] 영문/국문 사이즈 축소로 한 줄 정렬 유도 */}
                 <p className="footer-small">TOUCH, EVERYTHING is a subscription-based service that introduces new lifestyle experiences each month through curated themes and items.</p>
                 <p className="footer-small">터치 에브리띵은 구독제로 운영되는 서비스이며, 매달 테마와 아이템을 통해 새로운 라이프스타일 경험을 제안합니다.</p>
               </div>
