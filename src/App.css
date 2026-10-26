@@ -1,52 +1,23 @@
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;700&display=swap');
 
-:root { --node-size: 96px; --grid-w: 496px; --grid-h: 396px; --sidebar-w: 22%; --content-w: 78%; }
-body { margin: 0; background: #fff; font-family: 'IBM Plex Sans', sans-serif; overflow: hidden; }
+:root {
+  --node-size: 96px;
+  --grid-w: 496px;
+  --grid-h: 396px;
+  --sidebar-w: 22%;
+  --content-w: 78%;
+}
 
-/* [수정] 힌트 문구 화면 중앙 고정 */
-.footer-hint-centered {
-  position: fixed;
-  bottom: 50px;
-  left: 50%;
-  transform: translateX(-50%);
+body {
+  margin: 0; background-color: #ffffff;
   font-family: 'IBM Plex Sans', sans-serif;
-  font-size: 9px;
-  color: #d1d1d1;
-  letter-spacing: 0.25em;
-  text-transform: uppercase;
-  animation: hintAppear 1.5s ease forwards;
+  font-weight: 400; overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* 로고 셔플 블러 */
-.logo-overlay-marker { transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), filter 0.4s ease; }
-.logo-overlay-marker.shuffling { filter: blur(3px); }
-
-/* [수정] 에피소드 하단 문구 정렬 및 사이즈 */
-.episode-footer-text {
-  text-align: center;
-  width: 85%;
-  max-width: 900px;
-  padding: 40px 0;
-  box-sizing: border-box;
-}
-.episode-footer-text p {
-  font-size: 10.5pt; /* 이미지 너비에 맞게 조절 */
-  line-height: 1.6;
-  color: #777;
-  margin: 6px 0;
-  letter-spacing: -0.01em;
-  word-break: keep-all; /* 문단 끊김 방지 */
-}
-
-/* 이미지 프레임용 스타일 */
-.brand-visual-img {
-  width: 100%;
-  height: auto;
-  display: block;
-}
-
-/* 기존 스타일 유지 */
 .app-root-container { width: 100vw; height: 100vh; position: relative; }
+
+/* --- [복구] 1:50 버전 홈 화면 레이아웃 및 텍스트 9px 고정 --- */
 .page-home { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; position: relative; }
 .viewport { flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; padding-bottom: 10vh; }
 .main-grid-wrapper { position: relative; width: var(--grid-w); height: var(--grid-h); }
@@ -54,24 +25,37 @@ body { margin: 0; background: #fff; font-family: 'IBM Plex Sans', sans-serif; ov
 .on { opacity: 1 !important; pointer-events: auto !important; z-index: 10; }
 .pixel-perfect { width: 100%; height: 100%; object-fit: fill; display: block; }
 .mask-circle { position: absolute; width: var(--node-size); height: var(--node-size); border-radius: 50%; background-repeat: no-repeat; background-size: var(--grid-w) var(--grid-h); background-color: #f9f9f9; transition: background-image 1.5s ease-in-out; }
+
+/* 로고 셔플 0.8초 모션 블러 */
+.logo-overlay-marker { position: absolute; width: var(--node-size); height: var(--node-size); z-index: 20; transition: transform 0.85s cubic-bezier(0.16, 1, 0.3, 1), filter 0.4s ease; display: flex; align-items: center; justify-content: center; }
+.logo-overlay-marker.shuffling { filter: blur(3px); }
 .logo-overlay-marker img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; transform: scale(1.02); }
 
+/* 인트로 힌트 문구 화면 중앙 고정 */
+.footer-hint-centered {
+  position: fixed; bottom: 50px; left: 50%; transform: translateX(-50%);
+  font-family: 'IBM Plex Sans', sans-serif; font-size: 9px; color: #d1d1d1;
+  letter-spacing: 0.25em; text-transform: uppercase;
+  animation: hintAppear 1.5s ease forwards;
+}
+
+/* [복구] 1:50 버전 가변 언더바 입력창 */
 .footer-layout { position: absolute; bottom: 80px; width: 100%; display: flex; justify-content: center; align-items: center; }
-.dynamic-input-area { display: inline-flex; align-items: center; justify-content: center; padding: 5px 0; min-width: 0; max-width: 90vw; }
-.dynamic-input-area.is-active { border-bottom: 0.5px solid #111; }
+.dynamic-input-area { display: inline-flex; align-items: center; justify-content: center; border-bottom: 0.5px solid #111; padding: 5px 0; min-width: 0; max-width: 90vw; cursor: text; }
 .touch-text { font-size: 9px; letter-spacing: 0.25em; color: #111; margin-right: -0.25em; }
 .comma-text { width: 0; opacity: 0; transition: all 0.3s ease; display: inline-block; overflow: hidden; font-size: 9px; color: #111; }
 .dynamic-input-area.is-active .comma-text { width: 7px; opacity: 1; margin-right: 2px; margin-left: 0.25em; }
-.input-field-wrapper { position: relative; display: inline-flex; align-items: center; min-width: 2px; flex-grow: 1; height: 12px; }
-input { font-family: 'IBM Plex Sans', sans-serif; font-size: 9px; font-weight: 400; background: transparent; border: none; outline: none; color: #111; text-transform: uppercase; letter-spacing: 0.2em; caret-color: #111; width: 100%; padding: 0; margin: 0; line-height: 1; }
-.input-measure { font-size: 9px; visibility: hidden; white-space: pre; letter-spacing: 0.2em; padding-right: 5px; }
+.input-field-wrapper { position: relative; display: inline-flex; align-items: center; min-width: 1px; flex-grow: 1; }
+input { font-family: 'IBM Plex Sans', sans-serif; font-size: 9px; font-weight: 400; background: transparent; border: none; outline: none; color: #111; text-transform: uppercase; letter-spacing: 0.2em; width: 100%; padding: 0; margin: 0; caret-color: #111; }
+.input-measure { font-family: 'IBM Plex Sans', sans-serif; font-size: 9px; visibility: hidden; white-space: pre; letter-spacing: 0.2em; padding-right: 6px; }
 
+/* --- 내부 페이지 레이아웃 --- */
 .internal-layout { display: flex; width: 100vw; height: 100vh; background: #fff; }
 .internal-sidebar { width: var(--sidebar-w); height: 100vh; display: flex; align-items: center; padding-left: 5vw; position: fixed; left: 0; top: 0; z-index: 100; background: #fff; }
 .sidebar-group { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
 .sidebar-title { font-size: 16px; font-weight: 700; cursor: pointer; color: #eee; transition: color 0.3s; }
-.sidebar-title.active { color: #000; }
-.sidebar-comma { font-size: 18px; color: #eee; margin-top: -8px; margin-bottom: 8px; cursor: pointer; }
+.sidebar-title:hover { color: #000; }
+.sidebar-comma { font-size: 18px; color: #eee; margin-top: -8px; margin-bottom: 8px; transition: color 0.4s; }
 .sidebar-comma.active { color: #000; }
 .sidebar-nav { display: flex; flex-direction: column; gap: 8px; }
 .sidebar-nav button { background: none; border: none; padding: 0; text-align: left; font-family: 'IBM Plex Sans', sans-serif; font-weight: 700; font-size: 16px; color: #eee; cursor: pointer; transition: color 0.3s; }
@@ -80,35 +64,43 @@ input { font-family: 'IBM Plex Sans', sans-serif; font-size: 9px; font-weight: 4
 .internal-main::-webkit-scrollbar { display: none; }
 .internal-section { width: 100%; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 100px 0; }
 
-.main-slogan { font-size: 24px; font-weight: 700; letter-spacing: 0.1em; color: #000; text-align: center; }
-.everything-frame { width: 85%; max-width: 900px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+/* EVERYTHING 프레임 */
+.everything-frame { width: 85%; max-width: 900px; display: flex; flex-direction: column; align-items: center; gap: 10px; position: relative; }
 .page-everything { width: 100%; aspect-ratio: 16 / 9; position: relative; overflow: hidden; background: #fcfcfc; border: 0.5px solid #eee; }
+.everything-frame:hover canvas { filter: blur(6px) grayscale(0.2); }
 .everything-zoom-hint-inline { margin-top: 20px; font-size: 9px; letter-spacing: 0.25em; color: #bbb; text-transform: uppercase; text-align: center; }
-.halftone-box { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 10px 18px; border-radius: 8px; background: rgba(255, 255, 255, 0.96); box-shadow: 0 4px 20px rgba(0,0,0,0.05); pointer-events: auto; min-width: 110px; }
+
+/* 덴시티 제어 박스 절반 사이즈 고정 */
 .halftone-controls-outer { position: absolute; bottom: 25px; width: 100%; display: flex; justify-content: center; z-index: 100; opacity: 0; transition: opacity 0.4s ease; pointer-events: none; }
 .page-everything:hover .halftone-controls-outer { opacity: 1; }
+.halftone-box { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 10px 18px; border-radius: 8px; background: rgba(255, 255, 255, 0.96); box-shadow: 0 4px 20px rgba(0,0,0,0.05); pointer-events: auto; min-width: 110px; }
 .halftone-box span { font-size: 7px; font-weight: 700; color: #333; letter-spacing: 0.15em; }
 .halftone-box input[type="range"] { width: 80px; -webkit-appearance: none; height: 1px; background: #ddd; outline: none; margin: 0 auto; }
 .halftone-box input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 8px; height: 8px; background: #000; border-radius: 50%; cursor: pointer; }
 
-.about-editorial-wrap { display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 500px; }
-.about-body { font-size: 13px; line-height: 2.2; color: #444; margin-bottom: 60px; }
-.about-slogan-text { margin-top: 60px; padding: 30px; font-size: 15px; font-weight: 700; transition: all 0.8s ease; margin-bottom: 80px; }
-.about-audio-widget-inpage { width: var(--grid-w); margin-top: 20px; margin-bottom: 100px; }
+/* EXPERIENCE 이미지 프레임 */
+.experience-img-frame { width: 85%; max-width: 900px; display: block; }
+.experience-img-frame img { width: 100%; height: auto; object-fit: contain; }
 
-.episode-image-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 85%; max-width: 900px; margin-bottom: 60px; }
-.episode-item { position: relative; width: 100%; aspect-ratio: 1 / 1; overflow: hidden; cursor: pointer; }
+/* EPISODE 정렬 및 텍스트 최적화 */
+.episode-image-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 85%; max-width: 900px; margin-bottom: 40px; }
+.episode-item { position: relative; width: 100%; aspect-ratio: 1 / 1; overflow: hidden; }
 .episode-item img { width: 100%; height: 100%; object-fit: cover; }
-.episode-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); opacity: 0; transition: opacity 0.3s ease; display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
-.episode-item:hover .episode-overlay { opacity: 1; }
-.overlay-text { color: #fff; font-weight: 700; font-size: 11pt; text-align: center; line-height: 1.4; pointer-events: none; margin: 0; }
+.episode-footer-text { text-align: center; width: 85%; max-width: 900px; }
+.episode-footer-text p { font-size: 11pt; line-height: 1.6; color: #777; margin: 8px 0; word-break: keep-all; }
 
-.home-back-btn { position: fixed !important; right: 30px; bottom: 30px; width: 45px; height: 45px; z-index: 500; cursor: pointer; }
+/* ABOUT EDITORIAL */
+.about-editorial-wrap { display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 500px; }
+.about-body { font-size: 13px; line-height: 2.2; color: #444; }
+.about-slogan-text { margin-top: 60px; padding: 30px; font-size: 15px; font-weight: 700; transition: all 0.8s ease; margin-bottom: 80px; }
+.about-audio-widget-inpage { width: var(--grid-w); margin-bottom: 100px; }
+
+.home-back-btn { position: fixed !important; right: 30px; bottom: 30px; width: 45px; height: 45px; z-index: 500; cursor: pointer; transition: transform 0.3s ease; }
 .home-back-btn img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
 
 .slogan-focus-mode .internal-layout, .slogan-focus-mode .internal-section { background-color: #000; }
 .slogan-focus-mode .about-slogan-text { color: #fff; transform: scale(1.03); }
 .slogan-focus-mode .internal-sidebar, .slogan-focus-mode .about-body, .slogan-focus-mode .home-back-btn, .slogan-focus-mode .about-audio-widget-inpage { opacity: 0 !important; pointer-events: none; }
 
+@keyframes hintAppear { from { opacity: 0; transform: translateY(-2px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes hintAppear { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: translateY(0); } }
