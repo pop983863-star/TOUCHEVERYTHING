@@ -40,7 +40,6 @@ function App() {
   const [selectedColor, setSelectedColor] = useState(null); 
   const [isSloganHovered, setIsSloganHovered] = useState(false);
   const [isShuffling, setIsShuffling] = useState(false);
-  const [hoveredEpisode, setHoveredEpisode] = useState(null); // 에피소드 호버 상태
 
   const canvasRef = useRef(null);
   const imageBuffer = useRef(null);
@@ -50,9 +49,16 @@ function App() {
   const inputRef = useRef(null);
   const inputTimeout = useRef(null);
 
-  // 영상 강제 재생용 refs
-  const videoRef1 = useRef(null);
-  const videoRef2 = useRef(null);
+  // 영상 재생 강제 실행을 위한 Refs
+  const v1 = useRef(null);
+  const v2 = useRef(null);
+
+  useEffect(() => {
+    if (view === 'internal' && activeSection === 'empty') {
+      if (v1.current) v1.current.play().catch(() => {});
+      if (v2.current) v2.current.play().catch(() => {});
+    }
+  }, [view, activeSection]);
 
   const preloadImage = (url) => {
     return new Promise((resolve) => {
@@ -96,13 +102,9 @@ function App() {
     inputTimeout.current = setTimeout(() => { if (val.trim() !== '') fetchNewImage(val); }, 600);
   };
 
-  // 홈 복귀 함수 (상태 리셋으로 튕김 해결)
   const backToHome = () => {
-    setView('home');
-    setMode('static');
-    setInputText('');
-    setActiveIndices(INITIAL_LOGO_INDICES);
-    lastInteractionTime.current = Date.now();
+    setView('home'); setMode('static'); setInputText('');
+    setActiveIndices(INITIAL_LOGO_INDICES); lastInteractionTime.current = Date.now();
   };
 
   const drawHalftone = useCallback(async () => {
@@ -113,8 +115,7 @@ function App() {
     img.onload = () => {
       const container = canvas.parentElement;
       if (!container) return;
-      canvas.width = container.clientWidth; 
-      canvas.height = container.clientHeight;
+      canvas.width = container.clientWidth; canvas.height = container.clientHeight;
       const scale = Math.max(canvas.width / img.width, canvas.height / img.height);
       const x = (canvas.width / 2) - (img.width / 2) * scale;
       const y = (canvas.height / 2) - (img.height / 2) * scale;
@@ -183,7 +184,7 @@ function App() {
   };
 
   return (
-    <div className={`app-root-container ${isSloganHovered ? 'slogan-focus-mode' : ''} ${hoveredEpisode ? 'episode-dimmed' : ''} view-${view}`}>
+    <div className={`app-root-container ${isSloganHovered ? 'slogan-focus-mode' : ''} view-${view}`}>
       
       {view === 'home' && (
         <div className="page-home">
@@ -230,14 +231,14 @@ function App() {
           </aside>
           <main className="internal-main" ref={scrollContainerRef}>
             <section className="internal-section" ref={emptyRef}>
-              <div className="internal-home-video-row scaled">
-                <div className="video-box-half-large">
-                  <video ref={videoRef1} key="v-system" autoPlay loop muted playsInline className="brand-video">
+              <div className="internal-home-video-row scaled-wide">
+                <div className="video-box-large">
+                  <video ref={v1} autoPlay loop muted playsInline className="brand-video">
                     <source src="/assets/logo-system.mp4" type="video/mp4" />
                   </video>
                 </div>
-                <div className="video-box-half-large">
-                  <video ref={videoRef2} key="v-loop" autoPlay loop muted playsInline className="brand-video">
+                <div className="video-box-large">
+                  <video ref={v2} autoPlay loop muted playsInline className="brand-video">
                     <source src="/assets/logo-loop.mp4" type="video/mp4" />
                   </video>
                 </div>
@@ -275,13 +276,11 @@ function App() {
             <section className="internal-section section-episode" ref={episodeRef}>
               <div className="episode-image-grid">
                 {EPISODE_DATA.map(item => (
-                  <div 
-                    key={item.id} 
-                    className="episode-img-box"
-                    onMouseEnter={() => setHoveredEpisode(item)}
-                    onMouseLeave={() => setHoveredEpisode(null)}
-                  >
+                  <div key={item.id} className="episode-img-box">
                     <img src={`/assets/${item.id}.png`} alt={`Episode ${item.id}`} />
+                    <div className="episode-hover-overlay">
+                       <p>{item.text}</p>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -292,16 +291,6 @@ function App() {
             </section>
           </main>
           <div className="home-back-btn" onClick={backToHome}><img src="/assets/logo-reference.png" alt="Home" /></div>
-
-          {/* 에피소드 호버 오버레이 */}
-          {hoveredEpisode && (
-            <div className="episode-preview-overlay">
-              <div className="preview-container">
-                <img src={`/assets/${hoveredEpisode.id}.png`} alt="Preview" className="preview-main-img" />
-                <p className="preview-caption">{hoveredEpisode.text}</p>
-              </div>
-            </div>
-          )}
         </div>
       )}
     </div>
