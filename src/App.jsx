@@ -28,7 +28,7 @@ const generateGridNodes = () => {
 
 function App() {
   const [view, setView] = useState('home'); 
-  const [activeSection, setActiveSection] = useState('overview'); 
+  const [activeSection, setActiveSection] = useState('empty'); 
   const [inputText, setInputText] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [nodes] = useState(generateGridNodes());
@@ -39,6 +39,7 @@ function App() {
   const [isZooming, setIsZooming] = useState(false);
   const [selectedColor, setSelectedColor] = useState(null); 
   const [isSloganHovered, setIsSloganHovered] = useState(false);
+  const [isShuffling, setIsShuffling] = useState(false);
 
   const canvasRef = useRef(null);
   const imageBuffer = useRef(null);
@@ -79,12 +80,14 @@ function App() {
   };
 
   const moveLogos = useCallback(() => {
+    setIsShuffling(true);
     setActiveIndices(() => {
       let first = Math.floor(Math.random() * TOTAL_NODES);
       let second = Math.floor(Math.random() * TOTAL_NODES);
       while (second === first) second = Math.floor(Math.random() * TOTAL_NODES);
       return [first, second];
     });
+    setTimeout(() => setIsShuffling(false), 800);
   }, []);
 
   useEffect(() => {
@@ -140,7 +143,8 @@ function App() {
       else if (experienceRef.current && scrollPos >= experienceRef.current.offsetTop) setActiveSection('experience');
       else if (aboutRef.current && scrollPos >= aboutRef.current.offsetTop) setActiveSection('about');
       else if (everythingRef.current && scrollPos >= everythingRef.current.offsetTop) setActiveSection('everything');
-      else setActiveSection('overview');
+      else if (overviewRef.current && scrollPos >= overviewRef.current.offsetTop) setActiveSection('overview');
+      else setActiveSection('empty');
       subPageActivityTime.current = Date.now();
     };
     const container = scrollContainerRef.current;
@@ -154,8 +158,8 @@ function App() {
       if (view === 'home' && !isFocused) {
         const diff = (now - lastInteractionTime.current) / 1000;
         if (mode === 'interactive' && diff >= 12) { setMode('static'); setInputText(''); }
-        else if (mode === 'static' && diff >= 25 && diff < 55) { if (mode !== 'slideshow') { setMode('slideshow'); fetchNewImage('minimal'); } }
-        else if (mode === 'slideshow' && diff >= 55) { setMode('static'); lastInteractionTime.current = Date.now(); }
+        else if (mode === 'static' && diff >= 10 && diff < 40) { if (mode !== 'slideshow') { setMode('slideshow'); fetchNewImage('minimal'); } }
+        else if (mode === 'slideshow' && diff >= 40) { setMode('static'); lastInteractionTime.current = Date.now(); }
       } else if (view !== 'home' && (now - subPageActivityTime.current) / 1000 >= 180) { setView('home'); setMode('static'); }
     }, 1000);
     return () => clearInterval(timer);
@@ -178,7 +182,7 @@ function App() {
                   <div key={n.id} className="mask-circle" style={{ left: n.x, top: n.y, backgroundImage: currentBgImage ? `url(${currentBgImage})` : 'none', backgroundPosition: `-${n.x}px -${n.y}px`, backgroundSize: '496px 396px' }} />
                 ))}
                 {activeIndices.map((idx, i) => (
-                  <div key={i} className="logo-overlay-marker clickable" style={{ transform: `translate(${nodes[idx].x}px, ${nodes[idx].y}px)` }} 
+                  <div key={i} className={`logo-overlay-marker clickable ${isShuffling ? 'shuffling' : ''}`} style={{ transform: `translate(${nodes[idx].x}px, ${nodes[idx].y}px)` }} 
                     onClick={() => setView('internal')}>
                     <img src="/assets/logo-reference.png" alt="Logo" />
                   </div>
@@ -206,7 +210,7 @@ function App() {
           <aside className="internal-sidebar">
             <div className="sidebar-group">
               <div className="sidebar-title" onClick={() => setView('home')}>TOUCH</div>
-              <div className={`sidebar-comma ${activeSection === 'overview' ? 'active' : ''}`} onClick={() => scrollTo(overviewRef)}>,</div>
+              <div className={`sidebar-comma ${activeSection === 'overview' ? 'active' : ''}`}>,</div>
               <nav className="sidebar-nav">
                 <button className={activeSection === 'everything' ? 'active' : ''} onClick={() => scrollTo(everythingRef)}>EVERYTHING</button>
                 <button className={activeSection === 'about' ? 'active' : ''} onClick={() => scrollTo(aboutRef)}>ABOUT</button>
@@ -217,7 +221,6 @@ function App() {
           </aside>
 
           <main className="internal-main" ref={scrollContainerRef}>
-            {/* [수정] 쉼표(,) 섹션: 영상 2개 가로 배치 + 슬로건 */}
             <section className="internal-section section-overview" ref={overviewRef}>
               <div className="internal-home-video-row scaled-row">
                 <div className="video-box-large"><video autoPlay loop muted playsInline className="brand-video"><source src="/assets/logo-system.mp4" type="video/mp4" /></video></div>
@@ -248,7 +251,6 @@ function App() {
 
             <section className="internal-section" ref={aboutRef}>
               <div className="about-editorial-wrap">
-                {/* [수정] About 페이지 기존 헤더 복원 */}
                 <p className="about-date">2026년 6월 12일, 맑음</p>
                 <h2 className="about-question">당신은 무엇에 주의를 기울이고 있나요?</h2>
                 <p className="about-body">
@@ -258,7 +260,7 @@ function App() {
                   브랜드는 어떤 시선을 제안할 수 있을까.<br/>
                   우리는 일상의 재발견이라는 주제로<br/>
                   쉽게 지나치는 순간에 주목하고, 감각적 경험을 통해<br/>
-                  새로운 라이프스타일을 제안한다.
+                  새로운 라이프스타일을 제안하는 의식적트리거가 된다.
                 </p>
                 <div className={`about-slogan-text ${isSloganHovered ? 'hovered' : ''}`} onMouseEnter={() => setIsSloganHovered(true)} onMouseLeave={() => setIsSloganHovered(false)}>지나친 모든 것에 다시 관심을 기울일 때,<br/>평범한 일상은 새로운 발견이 된다.</div>
                 <div className="about-audio-widget-inpage"><iframe width="100%" height="120" src="https://player-widget.mixcloud.com/widget/iframe/?hide_cover=1&light=1&feed=%2Fthomyorke_%2Fin-the-absence-thereof-2%2F" frameBorder="0"></iframe></div>
@@ -269,11 +271,10 @@ function App() {
                <div className="experience-img-frame"><img src="/assets/ex.png" alt="Experience" /></div>
             </section>
 
-            {/* [수정] EPISODE 섹션: 하나씩 6열(1열 리스트) 세로 배열 */}
             <section className="internal-section section-episode" ref={episodeRef}>
               <div className="episode-vertical-list">
                 {EPISODE_DATA.map(item => (
-                  <div key={item.id} className="episode-item-wide">
+                  <div key={item.id} className="episode-item-original">
                     <img src={`/assets/${item.id}.png`} alt={`Episode ${item.id}`} />
                     <div className="episode-overlay"><p className="overlay-text">{item.text}</p></div>
                   </div>
