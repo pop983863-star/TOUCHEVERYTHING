@@ -250,4 +250,67 @@ function App() {
                     const i = (y * canvasRef.current.width + x) * 4;
                     const hex = '#' + [data[i], data[i+1], data[i+2]].map(val => val.toString(16).padStart(2, '0')).join('');
                     setSelectedColor(hex.toUpperCase()); setIsZooming(true);
-                    fe
+                    fetchNewImage(inputText, hex).then(() => { setTimeout(() => { setIsZooming(false); setSelectedColor(null); }, 2000); });
+                  }} />
+                  <div className="halftone-controls-outer">
+                    <div className="halftone-box">
+                      <span>DENSITY</span>
+                      <input type="range" min="1" max="60" value={dotSize} onChange={e => setDotSize(parseInt(e.target.value))} />
+                    </div>
+                  </div>
+                </div>
+                {/* 힌트 위치 수정: 프레임 바로 아래 안착 */}
+                <div className="everything-zoom-hint-inline">
+                  {selectedColor ? <span style={{ color: selectedColor, fontWeight: '700' }}>ZOOMING INTO {selectedColor}</span> : <span>CLICK ANYWHERE TO EXPLORE COLOR</span>}
+                </div>
+              </div>
+            </section>
+
+            <section className="internal-section" ref={aboutRef}>
+              <div className="about-editorial-wrap">
+                <p className="about-date">2026년 6월 12일, 맑음</p>
+                <h2 className="about-question">당신은 무엇에 주의를 기울이고 있나요?</h2>
+                <div className="about-body">
+                  그 어느 때보다 많은 정보와 콘텐츠에 접근할 수 있게 되었다.<br/>
+                  새로운 것을 발견하는 일은 쉬워졌지만, 정작 우리 주변의 익숙한 것들은 관심 밖으로 밀려나고 있다.<br/><br/>
+                  오늘 마주한 것들을 떠올릴 수 있을까.<br/>
+                  브랜드는 어떤 시선을 제안할 수 있을까.
+                </div>
+                <div className={`about-slogan-text ${isSloganHovered ? 'hovered' : ''}`}
+                  onMouseEnter={() => setIsSloganHovered(true)} onMouseLeave={() => setIsSloganHovered(false)}
+                >
+                  지나친 모든 것에 다시 관심을 기울일 때,<br/>
+                  평범한 일상은 새로운 발견이 된다.
+                </div>
+                <div className="about-audio-widget-inpage">
+                   <iframe width="100%" height="120" src="https://player-widget.mixcloud.com/widget/iframe/?hide_cover=1&light=1&feed=%2Fthomyorke_%2Fin-the-absence-thereof-2%2F" frameBorder="0"></iframe>
+                </div>
+              </div>
+            </section>
+
+            {/* [수정] EPISODE 섹션: 이미지 그리드 + 서비스 설명 문구 */}
+            <section className="internal-section section-episode" ref={episodeRef}>
+               <div className="episode-image-grid">
+                  {[1,2,3,4,5,6].map(num => (
+                    <div key={num} className="episode-img-box">
+                      <img src={`/assets/${num}.png`} alt={`Episode ${num}`} />
+                    </div>
+                  ))}
+               </div>
+               <div className="episode-footer-text">
+                  <p className="en">TOUCH, EVERYTHING is a subscription-based service that introduces new lifestyle experiences each month through curated themes and items.</p>
+                  <p className="kr">터치 에브리띵은 구독제로 운영되는 서비스이며, 매달 테마와 아이템을 통해 새로운 라이프스타일 경험을 제안합니다.</p>
+               </div>
+            </section>
+          </main>
+
+          <div className="home-back-btn" onClick={() => { setView('home'); setMode('static'); setInputText(''); }}>
+            <img src="/assets/logo-reference.png" alt="Home" />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default App;
