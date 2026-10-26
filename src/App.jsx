@@ -5,6 +5,15 @@ const COLUMN_STRUCTURE = [3, 4, 3, 4, 3];
 const TOTAL_NODES = 17;
 const INITIAL_LOGO_INDICES = [3, 13]; 
 
+const EPISODE_DATA = [
+  { id: 1, text: "보이지 않지만 언제나 곁은 지나간다." },
+  { id: 2, text: "시간과 공간을 기억하며" },
+  { id: 3, text: "빛나는 시간과 평온함" },
+  { id: 4, text: "가지 않은 길" },
+  { id: 5, text: "비로소 보이는 것들" },
+  { id: 6, text: "구독을 통해 매월 테마와 아이템이 공개됩니다." }
+];
+
 const generateGridNodes = () => {
   const nodes = [];
   const gap = 100;
@@ -31,6 +40,7 @@ function App() {
   const [selectedColor, setSelectedColor] = useState(null); 
   const [isSloganHovered, setIsSloganHovered] = useState(false);
   const [isShuffling, setIsShuffling] = useState(false);
+  const [hoveredEpisode, setHoveredEpisode] = useState(null); // 에피소드 호버 상태
 
   const canvasRef = useRef(null);
   const imageBuffer = useRef(null);
@@ -39,6 +49,10 @@ function App() {
   const scrollContainerRef = useRef(null);
   const inputRef = useRef(null);
   const inputTimeout = useRef(null);
+
+  // 영상 강제 재생용 refs
+  const videoRef1 = useRef(null);
+  const videoRef2 = useRef(null);
 
   const preloadImage = (url) => {
     return new Promise((resolve) => {
@@ -82,6 +96,15 @@ function App() {
     inputTimeout.current = setTimeout(() => { if (val.trim() !== '') fetchNewImage(val); }, 600);
   };
 
+  // 홈 복귀 함수 (상태 리셋으로 튕김 해결)
+  const backToHome = () => {
+    setView('home');
+    setMode('static');
+    setInputText('');
+    setActiveIndices(INITIAL_LOGO_INDICES);
+    lastInteractionTime.current = Date.now();
+  };
+
   const drawHalftone = useCallback(async () => {
     if (view !== 'internal' || !canvasRef.current || !currentBgImage) return;
     const canvas = canvasRef.current;
@@ -89,7 +112,9 @@ function App() {
     const img = new Image(); img.crossOrigin = "Anonymous"; img.src = currentBgImage;
     img.onload = () => {
       const container = canvas.parentElement;
-      canvas.width = container.clientWidth; canvas.height = container.clientHeight;
+      if (!container) return;
+      canvas.width = container.clientWidth; 
+      canvas.height = container.clientHeight;
       const scale = Math.max(canvas.width / img.width, canvas.height / img.height);
       const x = (canvas.width / 2) - (img.width / 2) * scale;
       const y = (canvas.height / 2) - (img.height / 2) * scale;
@@ -141,7 +166,7 @@ function App() {
         if (mode === 'interactive' && diff >= 10) { setMode('static'); setActiveIndices(INITIAL_LOGO_INDICES); setInputText(''); }
         else if (mode === 'static' && diff >= 10) { setMode('auto-slideshow'); fetchNewImage('nature,forest'); }
         else if (mode === 'auto-slideshow' && diff >= 25) { setMode('static'); setActiveIndices(INITIAL_LOGO_INDICES); lastInteractionTime.current = Date.now(); }
-      } else if (view !== 'home' && (now - subPageActivityTime.current) / 1000 >= 180) { setView('home'); setMode('static'); }
+      } else if (view !== 'home' && (now - subPageActivityTime.current) / 1000 >= 180) { backToHome(); }
     }, 1000);
     return () => clearInterval(timer);
   }, [mode, view, isFocused]);
@@ -158,7 +183,7 @@ function App() {
   };
 
   return (
-    <div className={`app-root-container ${isSloganHovered ? 'slogan-focus-mode' : ''} view-${view}`}>
+    <div className={`app-root-container ${isSloganHovered ? 'slogan-focus-mode' : ''} ${hoveredEpisode ? 'episode-dimmed' : ''} view-${view}`}>
       
       {view === 'home' && (
         <div className="page-home">
@@ -205,16 +230,15 @@ function App() {
           </aside>
           <main className="internal-main" ref={scrollContainerRef}>
             <section className="internal-section" ref={emptyRef}>
-              <div className="internal-home-video-row">
-                {/* 비디오 태그 재생 능력 강화 */}
-                <div className="video-box-half">
-                  <video key="v1" autoPlay loop muted playsInline className="brand-video">
-                    <source src="/assets/logo-loop.mp4" type="video/mp4" />
+              <div className="internal-home-video-row scaled">
+                <div className="video-box-half-large">
+                  <video ref={videoRef1} key="v-system" autoPlay loop muted playsInline className="brand-video">
+                    <source src="/assets/logo-system.mp4" type="video/mp4" />
                   </video>
                 </div>
-                <div className="video-box-half">
-                  <video key="v2" autoPlay loop muted playsInline className="brand-video">
-                    <source src="/assets/logo-system.mp4" type="video/mp4" />
+                <div className="video-box-half-large">
+                  <video ref={videoRef2} key="v-loop" autoPlay loop muted playsInline className="brand-video">
+                    <source src="/assets/logo-loop.mp4" type="video/mp4" />
                   </video>
                 </div>
               </div>
@@ -249,11 +273,35 @@ function App() {
               </div>
             </section>
             <section className="internal-section section-episode" ref={episodeRef}>
-              <div className="episode-image-grid">{[1,2,3,4,5,6].map(num => (<div key={num} className="episode-img-box"><img src={`/assets/${num}.png`} alt={`Episode ${num}`} /></div>))}</div>
-              <div className="episode-footer-text"><p className="en">TOUCH, EVERYTHING is a subscription-based service that introduces new lifestyle experiences each month through curated themes and items.</p><p className="kr">터치 에브리띵은 구독제로 운영되는 서비스이며, 매달 테마와 아이템을 통해 새로운 라이프스타일 경험을 제안합니다.</p></div>
+              <div className="episode-image-grid">
+                {EPISODE_DATA.map(item => (
+                  <div 
+                    key={item.id} 
+                    className="episode-img-box"
+                    onMouseEnter={() => setHoveredEpisode(item)}
+                    onMouseLeave={() => setHoveredEpisode(null)}
+                  >
+                    <img src={`/assets/${item.id}.png`} alt={`Episode ${item.id}`} />
+                  </div>
+                ))}
+              </div>
+              <div className="episode-footer-text">
+                <p className="en">TOUCH, EVERYTHING is a subscription-based service that introduces new lifestyle experiences each month through curated themes and items.</p>
+                <p className="kr">터치 에브리띵은 구독제로 운영되는 서비스이며, 매달 테마와 아이템을 통해 새로운 라이프스타일 경험을 제안합니다.</p>
+              </div>
             </section>
           </main>
-          <div className="home-back-btn" onClick={() => { setView('home'); setMode('static'); setInputText(''); }}><img src="/assets/logo-reference.png" alt="Home" /></div>
+          <div className="home-back-btn" onClick={backToHome}><img src="/assets/logo-reference.png" alt="Home" /></div>
+
+          {/* 에피소드 호버 오버레이 */}
+          {hoveredEpisode && (
+            <div className="episode-preview-overlay">
+              <div className="preview-container">
+                <img src={`/assets/${hoveredEpisode.id}.png`} alt="Preview" className="preview-main-img" />
+                <p className="preview-caption">{hoveredEpisode.text}</p>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
