@@ -38,7 +38,6 @@ function App() {
   const scrollContainerRef = useRef(null);
   const inputRef = useRef(null);
 
-  // 섹션 참조용 Refs
   const emptyRef = useRef(null);
   const overviewRef = useRef(null);
   const everythingRef = useRef(null);
@@ -114,7 +113,6 @@ function App() {
 
   useEffect(() => { if (view === 'internal') drawHalftone(); }, [drawHalftone, view, currentBgImage, dotSize]);
 
-  // 스크롤 감지 로직 업데이트
   useEffect(() => {
     if (view !== 'internal') return;
     const handleScroll = () => {
@@ -158,7 +156,6 @@ function App() {
   return (
     <div className={`app-root-container ${isSloganHovered ? 'slogan-focus-mode' : ''} view-${view}`}>
       
-      {/* 1. 홈/인트로 화면 */}
       {view === 'home' && (
         <div className="page-home">
           <div className="viewport">
@@ -179,7 +176,7 @@ function App() {
           </div>
           <footer className="footer-layout">
             <div className="footer-container">
-              <div className={`dynamic-input-area ${isFocused || inputText ? 'is-active' : ''}`} onClick={() => inputRef.current?.focus()}>
+              <div className={`dynamic-input-area ${inputText ? 'is-active' : ''}`} onClick={() => inputRef.current?.focus()}>
                 <span className="touch-text">TOUCH</span><span className="comma-text">,</span>
                 <div className="input-field-wrapper">
                   <input ref={inputRef} value={inputText} onFocus={() => setIsFocused(true)} onBlur={() => setIsFocused(false)} onChange={e => handleHomeInteraction(e.target.value)} autoComplete="off" spellCheck="false" />
@@ -192,14 +189,12 @@ function App() {
         </div>
       )}
 
-      {/* 2. 내부 페이지 통합 레이아웃 */}
       {view === 'internal' && (
         <div className="internal-layout">
           <aside className="internal-sidebar">
             <div className="sidebar-group">
-              {/* TOUCH 클릭 시 맨 위 빈 화면으로 이동 */}
+              {/* [수정] 인덱스 크기 통일 */}
               <div className={`sidebar-title ${activeSection === 'empty' ? 'active' : ''}`} onClick={() => scrollTo(emptyRef)}>TOUCH</div>
-              {/* 쉼표(,) 클릭 시 슬로건 섹션으로 이동 */}
               <div className={`sidebar-comma ${activeSection === 'overview' ? 'active' : ''}`} onClick={() => scrollTo(overviewRef)}>,</div>
               <nav className="sidebar-nav">
                 <button className={activeSection === 'everything' ? 'active' : ''} onClick={() => scrollTo(everythingRef)}>EVERYTHING</button>
@@ -210,16 +205,22 @@ function App() {
           </aside>
 
           <main className="internal-main" ref={scrollContainerRef}>
-            
-            {/* 섹션 1: TOUCH 전용 빈 화면 */}
-            <section className="internal-section section-empty" ref={emptyRef}></section>
+            {/* [수정] TOUCH 인덱스: 영상 두 개 가로 배치 */}
+            <section className="internal-section" ref={emptyRef}>
+              <div className="internal-home-video-row">
+                <div className="video-box-half">
+                  <video src="/assets/logo-loop.mp4" autoPlay loop muted playsInline className="brand-video" />
+                </div>
+                <div className="video-box-half">
+                  <video src="/assets/logo-system.mp4" autoPlay loop muted playsInline className="brand-video" />
+                </div>
+              </div>
+            </section>
 
-            {/* 섹션 2: 쉼표(,) 전용 슬로건 화면 */}
             <section className="internal-section section-overview" ref={overviewRef}>
                <h1 className="main-slogan">REDISCOVER THE ORDINARY</h1>
             </section>
 
-            {/* 섹션 3: EVERYTHING */}
             <section className="internal-section" ref={everythingRef}>
               <div className="everything-frame">
                 <div className={`page-everything ${isZooming ? 'zooming' : ''}`}>
@@ -247,7 +248,6 @@ function App() {
               </div>
             </section>
 
-            {/* 섹션 4: ABOUT */}
             <section className="internal-section" ref={aboutRef}>
               <div className="about-editorial-wrap">
                 <p className="about-date">2026년 6월 12일, 맑음</p>
@@ -270,7 +270,6 @@ function App() {
               </div>
             </section>
 
-            {/* 섹션 5: EPISODE */}
             <section className="internal-section" ref={episodeRef}>
               <div className="sub-video-container">
                 <div className="video-box"><video src="/assets/logo-loop.mp4" autoPlay loop muted playsInline className="brand-video" /></div>
