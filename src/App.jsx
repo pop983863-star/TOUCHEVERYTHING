@@ -170,7 +170,8 @@ function App() {
   };
 
   return (
-    <div className={`app-root-container ${isSloganHovered ? 'slogan-focus-mode' : ''} view-${view}`}>
+    /* [수정] view가 바뀔 때 전체적으로 페이드 효과를 주어 부드럽게 전환 */
+    <div key={view} className={`app-root-container ${isSloganHovered ? 'slogan-focus-mode' : ''} view-${view} view-fade-in`}>
       
       {view === 'home' && (
         <div className="page-home">
@@ -255,12 +256,13 @@ function App() {
                 <h2 className="about-question">당신은 무엇에 주의를 기울이고 있나요?</h2>
                 <p className="about-body">
                   그 어느 때보다 많은 정보와 콘텐츠가 우리의 삶을 풍족하게 해주고 있다.<br/>
+                  {/* [수정] "밀려나고 있다." 다음 줄로 내림 */}
                   새로운 것을 발견하는 일은 쉬워졌지만, 정작 우리 주변의 익숙한 것들은 관심 밖으로 밀려나고 있다.<br/><br/>
                   오늘 마주한 것들을 떠올릴 수 있을까.<br/>
                   브랜드는 어떤 시선을 제안할 수 있을까.<br/>
                   우리는 일상의 재발견이라는 주제로<br/>
                   쉽게 지나치는 순간에 주목하고, 감각적 경험을 통해<br/>
-                  새로운 라이프스타일을 제안하는 의식적트리거가 된다.
+                  새로운 라이프스타일을 제안한다.
                 </p>
                 <div className={`about-slogan-text ${isSloganHovered ? 'hovered' : ''}`} onMouseEnter={() => setIsSloganHovered(true)} onMouseLeave={() => setIsSloganHovered(false)}>지나친 모든 것에 다시 관심을 기울일 때,<br/>평범한 일상은 새로운 발견이 된다.</div>
                 <div className="about-audio-widget-inpage"><iframe width="100%" height="120" src="https://player-widget.mixcloud.com/widget/iframe/?hide_cover=1&light=1&feed=%2Fthomyorke_%2Fin-the-absence-thereof-2%2F" frameBorder="0"></iframe></div>
@@ -281,8 +283,9 @@ function App() {
                 ))}
               </div>
               <div className="episode-footer-text">
-                <p>TOUCH, EVERYTHING is a subscription-based service that introduces new lifestyle experiences each month through curated themes and items.</p>
-                <p>터치 에브리띵은 구독제로 운영되는 서비스이며, 매달 테마와 아이템을 통해 새로운 라이프스타일 경험을 제안합니다.</p>
+                {/* [수정] 영문/국문 사이즈 축소로 한 줄 정렬 유도 */}
+                <p className="footer-small">TOUCH, EVERYTHING is a subscription-based service that introduces new lifestyle experiences each month through curated themes and items.</p>
+                <p className="footer-small">터치 에브리띵은 구독제로 운영되는 서비스이며, 매달 테마와 아이템을 통해 새로운 라이프스타일 경험을 제안합니다.</p>
               </div>
             </section>
           </main>
