@@ -17,7 +17,71 @@ body {
 
 .app-root-container { width: 100vw; height: 100vh; position: relative; }
 
-/* --- HOME VIEW --- */
+/* --- [수정] 인트로 텍스트 수직 정렬 보정 --- */
+.dynamic-input-area {
+  display: inline-flex; 
+  align-items: center; /* center로 맞추어 수직 정렬 해결 */
+  justify-content: center; 
+  padding: 5px 0; 
+  min-width: 0; 
+  position: relative;
+}
+.dynamic-input-area.is-active { border-bottom: 0.5px solid #111; }
+
+.input-field-wrapper { 
+  display: inline-flex; 
+  align-items: center; /* 인풋 내부 요소들도 중앙 정렬 */
+  height: 100%;
+}
+
+input {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 9px;
+  font-weight: 400;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #111;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  caret-color: #111;
+  margin-top: 1px; /* 미세한 상단 치우침 방지 */
+}
+
+/* --- [수정] 내부 페이지 인덱스 크기 통일 --- */
+.sidebar-title { 
+  font-size: 16px; /* 다른 버튼과 동일하게 축소 */
+  font-weight: 700; 
+  cursor: pointer; 
+  color: #eee; 
+  transition: color 0.3s;
+  margin-bottom: 0; 
+}
+.sidebar-title.active { color: #000; }
+
+.sidebar-nav button {
+  font-size: 16px;
+  /* 나머지는 기존과 동일 */
+}
+
+/* --- [수정] 내부 홈 영상 가로 배치 레이아웃 --- */
+.internal-home-video-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 20px;
+  width: 100%;
+  max-width: 1000px;
+}
+
+.video-box-half {
+  width: var(--grid-w); /* 그리드 사이즈 유지 */
+  height: var(--grid-h);
+  background: #f8f8f8;
+  flex-shrink: 0;
+}
+
+/* --- 기본 레이아웃 유지 --- */
 .page-home { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; position: relative; }
 .viewport { flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; padding-bottom: 10vh; }
 .main-grid-wrapper { position: relative; width: var(--grid-w); height: var(--grid-h); }
@@ -27,106 +91,50 @@ body {
 .mask-circle { position: absolute; width: var(--node-size); height: var(--node-size); border-radius: 50%; background-repeat: no-repeat; background-size: var(--grid-w) var(--grid-h); background-color: #f9f9f9; transition: background-image 1.5s ease-in-out; }
 .logo-overlay-marker { position: absolute; width: var(--node-size); height: var(--node-size); z-index: 20; transition: transform 0.85s cubic-bezier(0.16, 1, 0.3, 1); display: flex; align-items: center; justify-content: center; }
 .logo-overlay-marker img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; transform: scale(1.02); }
-
 .footer-layout { position: absolute; bottom: 80px; width: 100%; display: flex; justify-content: center; }
 .footer-container { display: flex; flex-direction: column; align-items: center; gap: 12px; }
-.dynamic-input-area { display: inline-flex; align-items: center; justify-content: center; padding: 5px 0; min-width: 0; position: relative; }
-.dynamic-input-area.is-active { border-bottom: 0.5px solid #111; }
 .touch-text { font-size: 9px; letter-spacing: 0.25em; color: #111; margin-right: -0.25em; }
 .comma-text { width: 0; opacity: 0; transition: all 0.3s ease; display: inline-block; overflow: hidden; font-size: 9px; color: #111; }
 .dynamic-input-area.is-active .comma-text { width: 7px; opacity: 1; margin-right: 2px; margin-left: 0.25em; }
-input { font-family: 'IBM Plex Sans', sans-serif; font-size: 9px; font-weight: 400; background: transparent; border: none; outline: none; text-transform: uppercase; letter-spacing: 0.2em; caret-color: #111; width: 100%; }
 .input-measure { font-family: 'IBM Plex Sans', sans-serif; font-size: 9px; visibility: hidden; white-space: pre; letter-spacing: 0.2em; padding-right: 5px; }
 .footer-hint { font-family: 'IBM Plex Sans', sans-serif; font-size: 9px; color: #d1d1d1; letter-spacing: 0.2em; text-transform: uppercase; opacity: 0; animation: hintAppear 1.5s ease 2s forwards; }
 
-/* --- INTERNAL LAYOUT --- */
 .internal-layout { display: flex; width: 100vw; height: 100vh; background: #fff; }
-
-.internal-sidebar {
-  width: var(--sidebar-w); height: 100vh;
-  display: flex; align-items: center;
-  padding-left: 5vw; position: fixed; left: 0; top: 0; z-index: 100;
-}
-
+.internal-sidebar { width: var(--sidebar-w); height: 100vh; display: flex; align-items: center; padding-left: 5vw; position: fixed; left: 0; top: 0; z-index: 100; background: #fff; }
 .sidebar-group { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
-
-/* TOUCH 메뉴 (제목) */
-.sidebar-title { 
-  font-size: 20px; font-weight: 700; cursor: pointer; color: #eee; 
-  transition: color 0.3s;
-}
-.sidebar-title.active { color: #000; }
-
-/* 쉼표 메뉴 인터랙션 */
-.sidebar-comma { 
-  font-size: 20px; font-weight: 700; color: #eee; margin-top: -8px; margin-bottom: 8px; 
-  cursor: pointer; transition: color 0.4s;
-}
+.sidebar-comma { font-size: 18px; color: #eee; margin-top: -8px; margin-bottom: 8px; transition: color 0.4s; }
 .sidebar-comma.active { color: #000; }
-
 .sidebar-nav { display: flex; flex-direction: column; gap: 8px; }
-.sidebar-nav button {
-  background: none; border: none; padding: 0; text-align: left;
-  font-family: 'IBM Plex Sans', sans-serif; font-weight: 700; font-size: 16px;
-  color: #eee; cursor: pointer; transition: color 0.3s;
-}
+.sidebar-nav button { background: none; border: none; padding: 0; text-align: left; font-family: 'IBM Plex Sans', sans-serif; font-weight: 700; font-size: 16px; color: #eee; cursor: pointer; transition: color 0.3s; }
 .sidebar-nav button.active, .sidebar-nav button:hover { color: #000; }
-
-.internal-main {
-  width: var(--content-w); height: 100vh; margin-left: var(--sidebar-w);
-  overflow-y: scroll; scroll-behavior: smooth; scrollbar-width: none;
-}
+.internal-main { width: var(--content-w); height: 100vh; margin-left: var(--sidebar-w); overflow-y: scroll; scroll-behavior: smooth; scrollbar-width: none; }
 .internal-main::-webkit-scrollbar { display: none; }
-
-.internal-section { width: 100%; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-
-/* 빈 화면 섹션 */
-.section-empty { min-height: 100vh; }
-
+.internal-section { width: 100%; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 0; }
 .main-slogan { font-size: 24px; font-weight: 700; letter-spacing: 0.1em; color: #000; text-align: center; }
-
-/* EVERYTHING 프레임 */
 .everything-frame { width: 85%; max-width: 900px; display: flex; flex-direction: column; align-items: center; gap: 20px; }
 .page-everything { width: 100%; aspect-ratio: 16 / 9; position: relative; overflow: hidden; background: #fcfcfc; border: 0.5px solid #eee; }
-.halftone-controls-outer { position: absolute; bottom: 25px; width: 100%; display: flex; justify-content: center; opacity: 0; transition: opacity 0.4s; }
+.halftone-box { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 10px 18px; border-radius: 8px; background: rgba(255, 255, 255, 0.96); box-shadow: 0 4px 20px rgba(0,0,0,0.05); pointer-events: auto; min-width: 110px; }
+.halftone-controls-outer { position: absolute; bottom: 40px; width: 100%; display: flex; justify-content: center; z-index: 100; opacity: 0; transition: opacity 0.4s ease; pointer-events: none; }
 .page-everything:hover .halftone-controls-outer { opacity: 1; }
-.halftone-box { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 15px; background: rgba(255, 255, 255, 0.98); box-shadow: 0 4px 15px rgba(0,0,0,0.04); border-radius: 4px; }
-.halftone-box span { font-size: 7px; font-weight: 700; letter-spacing: 0.1em; color: #555; }
-.halftone-box input[type="range"] { width: 70px; height: 1px; -webkit-appearance: none; background: #eee; outline: none; }
-.halftone-box input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 6px; height: 6px; background: #000; border-radius: 50%; }
-.everything-zoom-hint { font-size: 9px; letter-spacing: 0.2em; color: #bbb; text-transform: uppercase; }
-
-/* ABOUT EDITORIAL */
+.halftone-box span { font-size: 7px; font-weight: 700; color: #333; letter-spacing: 0.15em; }
+.halftone-box input[type="range"] { width: 80px; -webkit-appearance: none; height: 1px; background: #ddd; outline: none; margin: 0 auto; }
+.halftone-box input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 8px; height: 8px; background: #000; border-radius: 50%; cursor: pointer; }
+.everything-zoom-hint { position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%); font-family: 'IBM Plex Sans', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 0.25em; text-transform: uppercase; z-index: 500; background: rgba(255,255,255,0.85); padding: 10px 25px; border-radius: 30px; color: #111; }
 .about-editorial-wrap { display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 500px; }
 .about-date { font-size: 11px; color: #999; margin-bottom: 25px; }
 .about-question { font-size: 22px; font-weight: 700; margin-bottom: 35px; }
-.about-body { font-size: 13px; line-height: 2.2; color: #444; }
+.about-body { font-size: 14px; line-height: 2.2; color: #444; }
 .about-slogan-text { margin-top: 80px; padding: 30px; font-size: 15px; font-weight: 700; transition: all 0.8s ease; margin-bottom: 80px; }
 .about-audio-widget-inpage { width: var(--grid-w); margin-top: 20px; margin-bottom: 100px; }
-
-/* EPISODE VIDEO */
 .sub-video-container { display: flex; flex-direction: column; gap: 80px; align-items: center; }
-.video-box { width: var(--grid-w); height: var(--grid-h); position: relative; flex-shrink: 0; background-color: #f8f8f8; }
-.brand-video { width: 100%; height: 100%; object-fit: cover; }
-
-.home-back-btn { position: fixed; right: 30px; bottom: 30px; width: 45px; height: 45px; z-index: 500; cursor: pointer; }
+.video-box { width: var(--grid-w); height: var(--grid-h); position: relative; flex-shrink: 0; background-color: #f0f0f0; }
+.brand-video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.home-back-btn { position: fixed !important; right: 30px; bottom: 30px; width: 45px; height: 45px; z-index: 500; cursor: pointer; transition: transform 0.3s ease; }
 .home-back-btn img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
 
-/* FOCUS MODE */
 .slogan-focus-mode .internal-layout, .slogan-focus-mode .internal-section { background-color: #000; }
 .slogan-focus-mode .about-slogan-text { color: #fff; transform: scale(1.03); }
 .slogan-focus-mode .internal-sidebar, .slogan-focus-mode .about-date, .slogan-focus-mode .about-question, .slogan-focus-mode .about-body, .slogan-focus-mode .home-back-btn, .slogan-focus-mode .about-audio-widget-inpage { opacity: 0 !important; pointer-events: none; }
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes hintAppear { from { opacity: 0; transform: translateY(-2px); } to { opacity: 1; transform: translateY(0); } }
-
-/* 📱 MOBILE 대응 */
-@media (max-width: 800px) {
-  .internal-sidebar { width: 100%; height: 80px; position: fixed; padding-left: 0; justify-content: center; }
-  .sidebar-group { flex-direction: row; align-items: center; gap: 15px; }
-  .sidebar-comma { display: none; }
-  .sidebar-nav { flex-direction: row; gap: 15px; }
-  .sidebar-nav button, .sidebar-title { font-size: 14px; }
-  .internal-main { width: 100%; margin-left: 0; padding-top: 80px; }
-  .video-box { width: 90vw; height: auto; aspect-ratio: 496/396; }
-}
