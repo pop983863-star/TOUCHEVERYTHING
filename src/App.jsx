@@ -40,12 +40,6 @@ function App() {
   const inputRef = useRef(null);
   const inputTimeout = useRef(null);
 
-  const emptyRef = useRef(null);
-  const overviewRef = useRef(null);
-  const everythingRef = useRef(null);
-  const aboutRef = useRef(null);
-  const episodeRef = useRef(null);
-
   const preloadImage = (url) => {
     return new Promise((resolve) => {
       const img = new Image();
@@ -117,6 +111,12 @@ function App() {
 
   useEffect(() => { if (view === 'internal') drawHalftone(); }, [drawHalftone, view, currentBgImage, dotSize]);
 
+  const emptyRef = useRef(null);
+  const overviewRef = useRef(null);
+  const everythingRef = useRef(null);
+  const aboutRef = useRef(null);
+  const episodeRef = useRef(null);
+
   useEffect(() => {
     if (view !== 'internal') return;
     const handleScroll = () => {
@@ -159,6 +159,7 @@ function App() {
 
   return (
     <div className={`app-root-container ${isSloganHovered ? 'slogan-focus-mode' : ''} view-${view}`}>
+      
       {view === 'home' && (
         <div className="page-home">
           <div className="viewport">
@@ -205,8 +206,17 @@ function App() {
           <main className="internal-main" ref={scrollContainerRef}>
             <section className="internal-section" ref={emptyRef}>
               <div className="internal-home-video-row">
-                <div className="video-box-half"><video src="/assets/logo-loop.mp4" autoPlay loop muted playsInline className="brand-video" /></div>
-                <div className="video-box-half"><video src="/assets/logo-system.mp4" autoPlay loop muted playsInline className="brand-video" /></div>
+                {/* 비디오 태그 재생 능력 강화 */}
+                <div className="video-box-half">
+                  <video key="v1" autoPlay loop muted playsInline className="brand-video">
+                    <source src="/assets/logo-loop.mp4" type="video/mp4" />
+                  </video>
+                </div>
+                <div className="video-box-half">
+                  <video key="v2" autoPlay loop muted playsInline className="brand-video">
+                    <source src="/assets/logo-system.mp4" type="video/mp4" />
+                  </video>
+                </div>
               </div>
             </section>
             <section className="internal-section section-overview" ref={overviewRef}><h1 className="main-slogan">REDISCOVER THE ORDINARY</h1></section>
