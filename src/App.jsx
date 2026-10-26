@@ -39,8 +39,7 @@ function App() {
   const [isZooming, setIsZooming] = useState(false);
   const [selectedColor, setSelectedColor] = useState(null); 
   const [isSloganHovered, setIsSloganHovered] = useState(false);
-  const [isShuffling, setIsShuffling] = useState(false); // 로고 모션블러 상태
-  const [isControlsHovered, setIsControlsHovered] = useState(false); // 배경 블러용
+  const [isShuffling, setIsShuffling] = useState(false);
 
   const canvasRef = useRef(null);
   const imageBuffer = useRef(null);
@@ -48,7 +47,14 @@ function App() {
   const subPageActivityTime = useRef(Date.now()); 
   const scrollContainerRef = useRef(null);
   const inputRef = useRef(null);
-  const inputTimeout = useRef(null);
+
+  // 섹션 참조용 Refs (EXPERIENCE 추가)
+  const emptyRef = useRef(null);
+  const overviewRef = useRef(null);
+  const everythingRef = useRef(null);
+  const aboutRef = useRef(null);
+  const experienceRef = useRef(null);
+  const episodeRef = useRef(null);
 
   const preloadImage = (url) => {
     return new Promise((resolve) => {
@@ -58,9 +64,12 @@ function App() {
     });
   };
 
+  // 컬러 기반 검색 강화 (color 파라미터 전달)
   const fetchNewImage = async (query = '', color = null) => {
     try {
-      const res = await fetch(`/api/images?q=${encodeURIComponent(query)}${color ? `&color=${encodeURIComponent(color)}` : ''}`);
+      // # 제거한 hex 값 추출
+      const cleanColor = color ? color.replace('#', '') : '';
+      const res = await fetch(`/api/images?q=${encodeURIComponent(query)}&color=${cleanColor}`);
       const data = await res.json();
       if (data.images && data.images.length > 0) {
         const randomIndex = Math.floor(Math.random() * data.images.length);
@@ -74,22 +83,30 @@ function App() {
   };
 
   const moveLogos = useCallback(() => {
-    setIsShuffling(true); // 이동 시작시 블러 켬
+    setIsShuffling(true);
     setActiveIndices(() => {
       let first = Math.floor(Math.random() * TOTAL_NODES);
       let second = Math.floor(Math.random() * TOTAL_NODES);
       while (second === first) second = Math.floor(Math.random() * TOTAL_NODES);
       return [first, second];
     });
-    setTimeout(() => setIsShuffling(false), 800); // 애니메이션 시간만큼 유지
+    setTimeout(() => setIsShuffling(false), 800);
   }, []);
+
+  // [수정] 10초마다 무조건 로고 셔플
+  useEffect(() => {
+    const shuffleTimer = setInterval(() => {
+      if (view === 'home') moveLogos();
+    }, 10000);
+    return () => clearInterval(shuffleTimer);
+  }, [view, moveLogos]);
 
   const handleHomeInteraction = (val) => {
     setInputText(val);
     lastInteractionTime.current = Date.now();
     if (mode === 'static' && val.trim() !== '') setMode('interactive');
-    if (inputTimeout.current) clearTimeout(inputTimeout.current);
-    inputTimeout.current = setTimeout(() => { if (val.trim() !== '') fetchNewImage(val); }, 600);
+    const timer = setTimeout(() => { if (val.trim() !== '') fetchNewImage(val); }, 600);
+    return () => clearTimeout(timer);
   };
 
   const drawHalftone = useCallback(async () => {
@@ -121,17 +138,12 @@ function App() {
 
   useEffect(() => { if (view === 'internal') drawHalftone(); }, [drawHalftone, view, currentBgImage, dotSize]);
 
-  const emptyRef = useRef(null);
-  const overviewRef = useRef(null);
-  const everythingRef = useRef(null);
-  const aboutRef = useRef(null);
-  const episodeRef = useRef(null);
-
   useEffect(() => {
     if (view !== 'internal') return;
     const handleScroll = () => {
       const scrollPos = scrollContainerRef.current.scrollTop + window.innerHeight / 2;
       if (episodeRef.current && scrollPos >= episodeRef.current.offsetTop) setActiveSection('episode');
+      else if (experienceRef.current && scrollPos >= experienceRef.current.offsetTop) setActiveSection('experience');
       else if (aboutRef.current && scrollPos >= aboutRef.current.offsetTop) setActiveSection('about');
       else if (everythingRef.current && scrollPos >= everythingRef.current.offsetTop) setActiveSection('everything');
       else if (overviewRef.current && scrollPos >= overviewRef.current.offsetTop) setActiveSection('overview');
@@ -148,20 +160,13 @@ function App() {
       const now = Date.now();
       if (view === 'home' && !isFocused) {
         const diff = (now - lastInteractionTime.current) / 1000;
-        if (mode === 'interactive' && diff >= 12) { setMode('static'); setActiveIndices(INITIAL_LOGO_INDICES); setInputText(''); }
-        else if (mode === 'static' && diff >= 25 && diff < 55) { if (mode !== 'slideshow') { setMode('slideshow'); fetchNewImage(''); } }
-        else if (mode === 'slideshow' && diff >= 55) { setMode('static'); setActiveIndices(INITIAL_LOGO_INDICES); }
-      } else if (view !== 'home' && (now - subPageActivityTime.current) / 1000 >= 180) { setView('home'); setMode('static'); setInputText(''); }
+        if (mode === 'interactive' && diff >= 10) { setMode('static'); setInputText(''); }
+        else if (mode === 'static' && diff >= 10 && diff < 40) { if (mode !== 'slideshow') { setMode('slideshow'); fetchNewImage('minimal'); } }
+        else if (mode === 'slideshow' && diff >= 40) { setMode('static'); lastInteractionTime.current = Date.now(); }
+      } else if (view !== 'home' && (now - subPageActivityTime.current) / 1000 >= 180) { setView('home'); setMode('static'); }
     }, 1000);
     return () => clearInterval(timer);
   }, [mode, view, isFocused]);
-
-  useEffect(() => {
-    if (view === 'home' && mode !== 'static' && !isFocused) {
-      const interval = setInterval(moveLogos, 5000);
-      return () => clearInterval(interval);
-    }
-  }, [mode, view, moveLogos, isFocused]);
 
   const scrollTo = (ref) => {
     ref.current.scrollIntoView({ behavior: 'smooth' });
@@ -169,6 +174,7 @@ function App() {
 
   return (
     <div className={`app-root-container ${isSloganHovered ? 'slogan-focus-mode' : ''} view-${view}`}>
+      
       {view === 'home' && (
         <div className="page-home">
           <div className="viewport">
@@ -193,7 +199,8 @@ function App() {
                   <span className="input-measure">{inputText}</span>
                 </div>
               </div>
-              {(mode !== 'static' || inputText) && <div className="footer-hint">TOUCH SYMBOL</div>}
+              {/* [수정] 홈페이지 가로 정중앙 고정 */}
+              {(mode !== 'static' || inputText) && <div className="footer-hint-centered">TOUCH SYMBOL</div>}
             </div>
           </footer>
         </div>
@@ -208,22 +215,18 @@ function App() {
               <nav className="sidebar-nav">
                 <button className={activeSection === 'everything' ? 'active' : ''} onClick={() => scrollTo(everythingRef)}>EVERYTHING</button>
                 <button className={activeSection === 'about' ? 'active' : ''} onClick={() => scrollTo(aboutRef)}>ABOUT</button>
+                <button className={activeSection === 'experience' ? 'active' : ''} onClick={() => scrollTo(experienceRef)}>THE EXPERIENCE</button>
                 <button className={activeSection === 'episode' ? 'active' : ''} onClick={() => scrollTo(episodeRef)}>EPISODE</button>
               </nav>
             </div>
           </aside>
 
           <main className="internal-main" ref={scrollContainerRef}>
-            <section className="internal-section" ref={emptyRef}>
-              <div className="internal-home-video-row scaled-row">
-                <div className="video-box-large"><video autoPlay loop muted playsInline className="brand-video"><source src="/assets/logo-system.mp4" type="video/mp4" /></video></div>
-                <div className="video-box-large"><video autoPlay loop muted playsInline className="brand-video"><source src="/assets/logo-loop.mp4" type="video/mp4" /></video></div>
-              </div>
-            </section>
+            <section className="internal-section" ref={emptyRef}></section>
             <section className="internal-section section-overview" ref={overviewRef}><h1 className="main-slogan">REDISCOVER THE ORDINARY</h1></section>
-            
+
             <section className="internal-section" ref={everythingRef}>
-              <div className={`everything-frame ${isControlsHovered ? 'controls-active' : ''}`}>
+              <div className="everything-frame">
                 <div className={`page-everything ${isZooming ? 'zooming' : ''}`}>
                   <canvas ref={canvasRef} onClick={(e) => {
                     if (isZooming || !imageBuffer.current) return;
@@ -236,42 +239,41 @@ function App() {
                     setSelectedColor(hex.toUpperCase()); setIsZooming(true);
                     fetchNewImage(inputText, hex).then(() => { setTimeout(() => { setIsZooming(false); setSelectedColor(null); }, 2000); });
                   }} />
-                  <div className="halftone-controls-outer" onMouseEnter={() => setIsControlsHovered(true)} onMouseLeave={() => setIsControlsHovered(false)}>
-                    <div className="halftone-box">
-                      <span>DENSITY</span>
-                      <input type="range" min="1" max="60" value={dotSize} onChange={e => setDotSize(parseInt(e.target.value))} />
-                    </div>
-                  </div>
+                  <div className="halftone-controls-outer"><div className="halftone-box"><span>DENSITY</span><input type="range" min="1" max="60" value={dotSize} onChange={e => setDotSize(parseInt(e.target.value))} /></div></div>
                 </div>
-                <div className="everything-zoom-hint-inline">
-                  {selectedColor ? <span style={{ color: selectedColor, fontWeight: '700' }}>ZOOMING INTO {selectedColor}</span> : <span>CLICK ANYWHERE TO EXPLORE COLOR</span>}
-                </div>
+                <div className="everything-zoom-hint-inline">{selectedColor ? <span style={{ color: selectedColor, fontWeight: '700' }}>ZOOMING INTO {selectedColor}</span> : <span>CLICK ANYWHERE TO EXPLORE COLOR</span>}</div>
               </div>
             </section>
 
             <section className="internal-section" ref={aboutRef}>
               <div className="about-editorial-wrap">
-                <p className="about-date">2026년 6월 12일, 맑음</p>
-                <h2 className="about-question">당신은 무엇에 주의를 기울이고 있나요?</h2>
-                <div className="about-body">그 어느 때보다 많은 정보와 콘텐츠에 접근할 수 있게 되었다.<br/>새로운 것을 발견하는 일은 쉬워졌지만, 정작 우리 주변의 익숙한 것들은 관심 밖으로 밀려나고 있다.<br/><br/>오늘 마주한 것들을 떠올릴 수 있을까.<br/>브랜드는 어떤 시선을 제안할 수 있을까.</div>
+                <p className="about-body">
+                  그 어느 때보다 많은 정보와 콘텐츠가 우리의 삶을 풍족하게 해주고 있다.<br/>
+                  새로운 것을 발견하는 일은 쉬워졌지만, 정작 우리 주변의 익숙한 것들은 관심 밖으로 밀려나고 있다.<br/><br/>
+                  오늘 마주한 것들을 떠올릴 수 있을까.<br/>
+                  브랜드는 어떤 시선을 제안할 수 있을까.<br/>
+                  우리는 일상의 재발견이라는 주제로<br/>
+                  쉽게 지나치는 순간에 주목하고, 감각적 경험을 통해<br/>
+                  새로운 라이프스타일을 제안한다.
+                </p>
                 <div className={`about-slogan-text ${isSloganHovered ? 'hovered' : ''}`} onMouseEnter={() => setIsSloganHovered(true)} onMouseLeave={() => setIsSloganHovered(false)}>지나친 모든 것에 다시 관심을 기울일 때,<br/>평범한 일상은 새로운 발견이 된다.</div>
                 <div className="about-audio-widget-inpage"><iframe width="100%" height="120" src="https://player-widget.mixcloud.com/widget/iframe/?hide_cover=1&light=1&feed=%2Fthomyorke_%2Fin-the-absence-thereof-2%2F" frameBorder="0"></iframe></div>
               </div>
             </section>
-            
-            <section className="internal-section section-episode" ref={episodeRef}>
-               <div className="episode-image-grid">
-                  {EPISODE_DATA.map(item => (
-                    <div key={item.id} className="episode-item">
-                      <img src={`/assets/${item.id}.png`} alt={`Episode ${item.id}`} />
-                      <div className="episode-overlay"><p className="overlay-text">{item.text}</p></div>
-                    </div>
-                  ))}
+
+            {/* [NEW] THE EXPERIENCE 섹션 */}
+            <section className="internal-section" ref={experienceRef}>
+               <div className="everything-frame">
+                  <img src="/assets/ex.png" alt="Experience" className="brand-visual-img" />
                </div>
-               <div className="episode-footer-text">
+            </section>
+
+            <section className="internal-section section-episode" ref={episodeRef}>
+              <div className="episode-image-grid">{[1,2,3,4,5,6].map(num => (<div key={num} className="episode-item"><img src={`/assets/${num}.png`} alt={`Episode ${num}`} /><div className="episode-overlay"><p className="overlay-text">{EPISODE_DATA[num-1].text}</p></div></div>))}</div>
+              <div className="episode-footer-text">
                 <p className="en">TOUCH, EVERYTHING is a subscription-based service that introduces new lifestyle experiences each month through curated themes and items.</p>
                 <p className="kr">터치 에브리띵은 구독제로 운영되는 서비스이며, 매달 테마와 아이템을 통해 새로운 라이프스타일 경험을 제안합니다.</p>
-               </div>
+              </div>
             </section>
           </main>
           <div className="home-back-btn" onClick={() => { setView('home'); setMode('static'); setInputText(''); }}><img src="/assets/logo-reference.png" alt="Home" /></div>
