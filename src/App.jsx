@@ -5,7 +5,6 @@ const COLUMN_STRUCTURE = [3, 4, 3, 4, 3];
 const TOTAL_NODES = 17;
 const INITIAL_LOGO_INDICES = [3, 13]; 
 
-// 에피소드 데이터
 const EPISODE_DATA = [
   { id: 1, text: "보이지 않지만 언제나 곁은 지나간다." },
   { id: 2, text: "시간과 공간을 기억하며" },
@@ -40,6 +39,8 @@ function App() {
   const [isZooming, setIsZooming] = useState(false);
   const [selectedColor, setSelectedColor] = useState(null); 
   const [isSloganHovered, setIsSloganHovered] = useState(false);
+  const [isShuffling, setIsShuffling] = useState(false); // 로고 모션블러 상태
+  const [isControlsHovered, setIsControlsHovered] = useState(false); // 배경 블러용
 
   const canvasRef = useRef(null);
   const imageBuffer = useRef(null);
@@ -72,23 +73,24 @@ function App() {
     }
   };
 
-  const handleHomeInteraction = (val) => {
-    setInputText(val);
-    lastInteractionTime.current = Date.now();
-    subPageActivityTime.current = Date.now();
-    if (mode === 'static' && val.trim() !== '') setMode('interactive');
-    if (inputTimeout.current) clearTimeout(inputTimeout.current);
-    inputTimeout.current = setTimeout(() => { if (val.trim() !== '') fetchNewImage(val); }, 600);
-  };
-
   const moveLogos = useCallback(() => {
+    setIsShuffling(true); // 이동 시작시 블러 켬
     setActiveIndices(() => {
       let first = Math.floor(Math.random() * TOTAL_NODES);
       let second = Math.floor(Math.random() * TOTAL_NODES);
       while (second === first) second = Math.floor(Math.random() * TOTAL_NODES);
       return [first, second];
     });
+    setTimeout(() => setIsShuffling(false), 800); // 애니메이션 시간만큼 유지
   }, []);
+
+  const handleHomeInteraction = (val) => {
+    setInputText(val);
+    lastInteractionTime.current = Date.now();
+    if (mode === 'static' && val.trim() !== '') setMode('interactive');
+    if (inputTimeout.current) clearTimeout(inputTimeout.current);
+    inputTimeout.current = setTimeout(() => { if (val.trim() !== '') fetchNewImage(val); }, 600);
+  };
 
   const drawHalftone = useCallback(async () => {
     if (view !== 'internal' || !canvasRef.current || !currentBgImage) return;
@@ -149,10 +151,7 @@ function App() {
         if (mode === 'interactive' && diff >= 12) { setMode('static'); setActiveIndices(INITIAL_LOGO_INDICES); setInputText(''); }
         else if (mode === 'static' && diff >= 25 && diff < 55) { if (mode !== 'slideshow') { setMode('slideshow'); fetchNewImage(''); } }
         else if (mode === 'slideshow' && diff >= 55) { setMode('static'); setActiveIndices(INITIAL_LOGO_INDICES); }
-      } else if (view !== 'home' && (now - subPageActivityTime.current) / 1000 >= 180) { 
-        // 튕김 해결: 복귀 시 상태 완전 초기화
-        setView('home'); setMode('static'); setInputText(''); setActiveIndices(INITIAL_LOGO_INDICES);
-      }
+      } else if (view !== 'home' && (now - subPageActivityTime.current) / 1000 >= 180) { setView('home'); setMode('static'); setInputText(''); }
     }, 1000);
     return () => clearInterval(timer);
   }, [mode, view, isFocused]);
@@ -170,7 +169,6 @@ function App() {
 
   return (
     <div className={`app-root-container ${isSloganHovered ? 'slogan-focus-mode' : ''} view-${view}`}>
-      
       {view === 'home' && (
         <div className="page-home">
           <div className="viewport">
@@ -181,10 +179,7 @@ function App() {
                   <div key={n.id} className="mask-circle" style={{ left: n.x, top: n.y, backgroundImage: currentBgImage ? `url(${currentBgImage})` : 'none', backgroundPosition: `-${n.x}px -${n.y}px`, backgroundSize: '496px 396px' }} />
                 ))}
                 {activeIndices.map((idx, i) => (
-                  <div key={i} className="logo-overlay-marker clickable" style={{ transform: `translate(${nodes[idx].x}px, ${nodes[idx].y}px)` }} 
-                    onClick={() => setView('internal')}>
-                    <img src="/assets/logo-reference.png" alt="Logo" />
-                  </div>
+                  <div key={i} className={`logo-overlay-marker clickable ${isShuffling ? 'shuffling' : ''}`} style={{ transform: `translate(${nodes[idx].x}px, ${nodes[idx].y}px)` }} onClick={() => setView('internal')}><img src="/assets/logo-reference.png" alt="Logo" /></div>
                 ))}
               </div>
             </div>
@@ -220,27 +215,15 @@ function App() {
 
           <main className="internal-main" ref={scrollContainerRef}>
             <section className="internal-section" ref={emptyRef}>
-              {/* [수정] 좌측 system, 우측 loop 가로 배치 (1.5x 확대) */}
               <div className="internal-home-video-row scaled-row">
-                <div className="video-box-large">
-                  <video key="system" autoPlay loop muted playsInline className="brand-video">
-                    <source src="/assets/logo-system.mp4" type="video/mp4" />
-                  </video>
-                </div>
-                <div className="video-box-large">
-                  <video key="loop" autoPlay loop muted playsInline className="brand-video">
-                    <source src="/assets/logo-loop.mp4" type="video/mp4" />
-                  </video>
-                </div>
+                <div className="video-box-large"><video autoPlay loop muted playsInline className="brand-video"><source src="/assets/logo-system.mp4" type="video/mp4" /></video></div>
+                <div className="video-box-large"><video autoPlay loop muted playsInline className="brand-video"><source src="/assets/logo-loop.mp4" type="video/mp4" /></video></div>
               </div>
             </section>
-
-            <section className="internal-section section-overview" ref={overviewRef}>
-               <h1 className="main-slogan">REDISCOVER THE ORDINARY</h1>
-            </section>
-
+            <section className="internal-section section-overview" ref={overviewRef}><h1 className="main-slogan">REDISCOVER THE ORDINARY</h1></section>
+            
             <section className="internal-section" ref={everythingRef}>
-              <div className="everything-frame">
+              <div className={`everything-frame ${isControlsHovered ? 'controls-active' : ''}`}>
                 <div className={`page-everything ${isZooming ? 'zooming' : ''}`}>
                   <canvas ref={canvasRef} onClick={(e) => {
                     if (isZooming || !imageBuffer.current) return;
@@ -253,7 +236,7 @@ function App() {
                     setSelectedColor(hex.toUpperCase()); setIsZooming(true);
                     fetchNewImage(inputText, hex).then(() => { setTimeout(() => { setIsZooming(false); setSelectedColor(null); }, 2000); });
                   }} />
-                  <div className="halftone-controls-outer">
+                  <div className="halftone-controls-outer" onMouseEnter={() => setIsControlsHovered(true)} onMouseLeave={() => setIsControlsHovered(false)}>
                     <div className="halftone-box">
                       <span>DENSITY</span>
                       <input type="range" min="1" max="60" value={dotSize} onChange={e => setDotSize(parseInt(e.target.value))} />
@@ -270,33 +253,18 @@ function App() {
               <div className="about-editorial-wrap">
                 <p className="about-date">2026년 6월 12일, 맑음</p>
                 <h2 className="about-question">당신은 무엇에 주의를 기울이고 있나요?</h2>
-                <div className="about-body">
-                  그 어느 때보다 많은 정보와 콘텐츠에 접근할 수 있게 되었다.<br/>
-                  새로운 것을 발견하는 일은 쉬워졌지만, 정작 우리 주변의 익숙한 것들은 관심 밖으로 밀려나고 있다.<br/><br/>
-                  오늘 마주한 것들을 떠올릴 수 있을까.<br/>
-                  브랜드는 어떤 시선을 제안할 수 있을까.
-                </div>
-                <div className={`about-slogan-text ${isSloganHovered ? 'hovered' : ''}`}
-                  onMouseEnter={() => setIsSloganHovered(true)} onMouseLeave={() => setIsSloganHovered(false)}
-                >
-                  지나친 모든 것에 다시 관심을 기울일 때,<br/>
-                  평범한 일상은 새로운 발견이 된다.
-                </div>
-                <div className="about-audio-widget-inpage">
-                  <iframe width="100%" height="120" src="https://player-widget.mixcloud.com/widget/iframe/?hide_cover=1&light=1&feed=%2Fthomyorke_%2Fin-the-absence-thereof-2%2F" frameBorder="0"></iframe>
-                </div>
+                <div className="about-body">그 어느 때보다 많은 정보와 콘텐츠에 접근할 수 있게 되었다.<br/>새로운 것을 발견하는 일은 쉬워졌지만, 정작 우리 주변의 익숙한 것들은 관심 밖으로 밀려나고 있다.<br/><br/>오늘 마주한 것들을 떠올릴 수 있을까.<br/>브랜드는 어떤 시선을 제안할 수 있을까.</div>
+                <div className={`about-slogan-text ${isSloganHovered ? 'hovered' : ''}`} onMouseEnter={() => setIsSloganHovered(true)} onMouseLeave={() => setIsSloganHovered(false)}>지나친 모든 것에 다시 관심을 기울일 때,<br/>평범한 일상은 새로운 발견이 된다.</div>
+                <div className="about-audio-widget-inpage"><iframe width="100%" height="120" src="https://player-widget.mixcloud.com/widget/iframe/?hide_cover=1&light=1&feed=%2Fthomyorke_%2Fin-the-absence-thereof-2%2F" frameBorder="0"></iframe></div>
               </div>
             </section>
-
+            
             <section className="internal-section section-episode" ref={episodeRef}>
-               {/* [수정] 에피소드 그리드 및 호버 오버레이 */}
                <div className="episode-image-grid">
                   {EPISODE_DATA.map(item => (
                     <div key={item.id} className="episode-item">
                       <img src={`/assets/${item.id}.png`} alt={`Episode ${item.id}`} />
-                      <div className="episode-overlay">
-                        <p className="overlay-text">{item.text}</p>
-                      </div>
+                      <div className="episode-overlay"><p className="overlay-text">{item.text}</p></div>
                     </div>
                   ))}
                </div>
@@ -306,10 +274,7 @@ function App() {
                </div>
             </section>
           </main>
-
-          <div className="home-back-btn" onClick={() => setView('home')}>
-            <img src="/assets/logo-reference.png" alt="Home" />
-          </div>
+          <div className="home-back-btn" onClick={() => { setView('home'); setMode('static'); setInputText(''); }}><img src="/assets/logo-reference.png" alt="Home" /></div>
         </div>
       )}
     </div>
