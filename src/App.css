@@ -17,18 +17,12 @@ body {
 
 .app-root-container { width: 100vw; height: 100vh; position: relative; }
 
-/* --- [복구] 1:50 버전 홈 화면 레이아웃 및 텍스트 9px 고정 --- */
-.page-home { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; position: relative; }
-.viewport { flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; padding-bottom: 10vh; }
-.main-grid-wrapper { position: relative; width: var(--grid-w); height: var(--grid-h); }
-.layer-static, .layer-dynamic { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; transition: opacity 1.5s ease-in-out; pointer-events: none; }
-.on { opacity: 1 !important; pointer-events: auto !important; z-index: 10; }
-.pixel-perfect { width: 100%; height: 100%; object-fit: fill; display: block; }
-.mask-circle { position: absolute; width: var(--node-size); height: var(--node-size); border-radius: 50%; background-repeat: no-repeat; background-size: var(--grid-w) var(--grid-h); background-color: #f9f9f9; transition: background-image 1.5s ease-in-out; }
-
-/* 로고 셔플 0.8초 모션 블러 */
-.logo-overlay-marker { position: absolute; width: var(--node-size); height: var(--node-size); z-index: 20; transition: transform 0.85s cubic-bezier(0.16, 1, 0.3, 1), filter 0.4s ease; display: flex; align-items: center; justify-content: center; }
-.logo-overlay-marker.shuffling { filter: blur(3px); }
+/* --- [수정] 로고 셔플 시 모션 블러 제거 --- */
+.logo-overlay-marker {
+  position: absolute; width: var(--node-size); height: var(--node-size);
+  z-index: 20; transition: transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex; align-items: center; justify-content: center;
+}
 .logo-overlay-marker img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; transform: scale(1.02); }
 
 /* 인트로 힌트 문구 화면 중앙 고정 */
@@ -39,68 +33,87 @@ body {
   animation: hintAppear 1.5s ease forwards;
 }
 
-/* [복구] 1:50 버전 가변 언더바 입력창 */
+/* --- [홈] 정렬 및 텍스트 9px 고정 --- */
+.page-home { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; position: relative; }
+.viewport { flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; padding-bottom: 10vh; }
+.main-grid-wrapper { position: relative; width: var(--grid-w); height: var(--grid-h); }
+.layer-static, .layer-dynamic { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; transition: opacity 1.5s ease-in-out; pointer-events: none; }
+.on { opacity: 1 !important; pointer-events: auto !important; z-index: 10; }
+.pixel-perfect { width: 100%; height: 100%; object-fit: fill; display: block; }
+.mask-circle { position: absolute; width: var(--node-size); height: var(--node-size); border-radius: 50%; background-repeat: no-repeat; background-size: var(--grid-w) var(--grid-h); background-color: #f9f9f9; transition: background-image 1.5s ease-in-out; }
+
 .footer-layout { position: absolute; bottom: 80px; width: 100%; display: flex; justify-content: center; align-items: center; }
+.footer-container { display: flex; flex-direction: column; align-items: center; gap: 12px; }
 .dynamic-input-area { display: inline-flex; align-items: center; justify-content: center; border-bottom: 0.5px solid #111; padding: 5px 0; min-width: 0; max-width: 90vw; cursor: text; }
 .touch-text { font-size: 9px; letter-spacing: 0.25em; color: #111; margin-right: -0.25em; }
 .comma-text { width: 0; opacity: 0; transition: all 0.3s ease; display: inline-block; overflow: hidden; font-size: 9px; color: #111; }
 .dynamic-input-area.is-active .comma-text { width: 7px; opacity: 1; margin-right: 2px; margin-left: 0.25em; }
-.input-field-wrapper { position: relative; display: inline-flex; align-items: center; min-width: 1px; flex-grow: 1; }
-input { font-family: 'IBM Plex Sans', sans-serif; font-size: 9px; font-weight: 400; background: transparent; border: none; outline: none; color: #111; text-transform: uppercase; letter-spacing: 0.2em; width: 100%; padding: 0; margin: 0; caret-color: #111; }
-.input-measure { font-family: 'IBM Plex Sans', sans-serif; font-size: 9px; visibility: hidden; white-space: pre; letter-spacing: 0.2em; padding-right: 6px; }
+.input-field-wrapper { position: relative; display: inline-flex; align-items: center; min-width: 1px; flex-grow: 1; height: 12px; }
+input { font-family: 'IBM Plex Sans', sans-serif; font-size: 9px; font-weight: 400; background: transparent; border: none; outline: none; color: #111; text-transform: uppercase; letter-spacing: 0.2em; caret-color: #111; width: 100%; padding: 0; margin: 0; line-height: 1; }
+.input-measure { font-family: 'IBM Plex Sans', sans-serif; font-size: 9px; visibility: hidden; white-space: pre; letter-spacing: 0.2em; padding-right: 5px; }
 
-/* --- 내부 페이지 레이아웃 --- */
+/* --- INTERNAL --- */
 .internal-layout { display: flex; width: 100vw; height: 100vh; background: #fff; }
 .internal-sidebar { width: var(--sidebar-w); height: 100vh; display: flex; align-items: center; padding-left: 5vw; position: fixed; left: 0; top: 0; z-index: 100; background: #fff; }
 .sidebar-group { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
 .sidebar-title { font-size: 16px; font-weight: 700; cursor: pointer; color: #eee; transition: color 0.3s; }
 .sidebar-title:hover { color: #000; }
-.sidebar-comma { font-size: 18px; color: #eee; margin-top: -8px; margin-bottom: 8px; transition: color 0.4s; }
+.sidebar-comma { font-size: 18px; color: #eee; margin-top: -8px; margin-bottom: 8px; cursor: pointer; transition: color 0.4s; }
 .sidebar-comma.active { color: #000; }
 .sidebar-nav { display: flex; flex-direction: column; gap: 8px; }
 .sidebar-nav button { background: none; border: none; padding: 0; text-align: left; font-family: 'IBM Plex Sans', sans-serif; font-weight: 700; font-size: 16px; color: #eee; cursor: pointer; transition: color 0.3s; }
 .sidebar-nav button.active, .sidebar-nav button:hover { color: #000; }
+
 .internal-main { width: var(--content-w); height: 100vh; margin-left: var(--sidebar-w); overflow-y: scroll; scroll-behavior: smooth; scrollbar-width: none; }
 .internal-main::-webkit-scrollbar { display: none; }
 .internal-section { width: 100%; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 100px 0; }
 
-/* EVERYTHING 프레임 */
+/* 영상 & 슬로건 정렬 */
+.internal-home-video-row { display: flex; flex-direction: row; justify-content: center; gap: 80px; width: 100%; margin-bottom: 60px; }
+.video-box-large { width: calc(var(--grid-w) * 1.5); height: calc(var(--grid-h) * 1.5); flex-shrink: 0; background-color: #f8f8f8; }
+.brand-video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.main-slogan { font-size: 24px; font-weight: 700; letter-spacing: 0.1em; color: #000; text-align: center; }
+
+/* EVERYTHING */
 .everything-frame { width: 85%; max-width: 900px; display: flex; flex-direction: column; align-items: center; gap: 10px; position: relative; }
 .page-everything { width: 100%; aspect-ratio: 16 / 9; position: relative; overflow: hidden; background: #fcfcfc; border: 0.5px solid #eee; }
 .everything-frame:hover canvas { filter: blur(6px) grayscale(0.2); }
 .everything-zoom-hint-inline { margin-top: 20px; font-size: 9px; letter-spacing: 0.25em; color: #bbb; text-transform: uppercase; text-align: center; }
-
-/* 덴시티 제어 박스 절반 사이즈 고정 */
+.halftone-box { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 10px 18px; border-radius: 8px; background: rgba(255, 255, 255, 0.96); box-shadow: 0 4px 20px rgba(0,0,0,0.05); pointer-events: auto; min-width: 110px; }
 .halftone-controls-outer { position: absolute; bottom: 25px; width: 100%; display: flex; justify-content: center; z-index: 100; opacity: 0; transition: opacity 0.4s ease; pointer-events: none; }
 .page-everything:hover .halftone-controls-outer { opacity: 1; }
-.halftone-box { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 10px 18px; border-radius: 8px; background: rgba(255, 255, 255, 0.96); box-shadow: 0 4px 20px rgba(0,0,0,0.05); pointer-events: auto; min-width: 110px; }
 .halftone-box span { font-size: 7px; font-weight: 700; color: #333; letter-spacing: 0.15em; }
 .halftone-box input[type="range"] { width: 80px; -webkit-appearance: none; height: 1px; background: #ddd; outline: none; margin: 0 auto; }
 .halftone-box input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 8px; height: 8px; background: #000; border-radius: 50%; cursor: pointer; }
 
-/* EXPERIENCE 이미지 프레임 */
-.experience-img-frame { width: 85%; max-width: 900px; display: block; }
-.experience-img-frame img { width: 100%; height: auto; object-fit: contain; }
-
-/* EPISODE 정렬 및 텍스트 최적화 */
-.episode-image-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 85%; max-width: 900px; margin-bottom: 40px; }
-.episode-item { position: relative; width: 100%; aspect-ratio: 1 / 1; overflow: hidden; }
-.episode-item img { width: 100%; height: 100%; object-fit: cover; }
-.episode-footer-text { text-align: center; width: 85%; max-width: 900px; }
-.episode-footer-text p { font-size: 11pt; line-height: 1.6; color: #777; margin: 8px 0; word-break: keep-all; }
-
 /* ABOUT EDITORIAL */
 .about-editorial-wrap { display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 500px; }
+.about-date { font-size: 11px; color: #999; margin-bottom: 25px; }
+.about-question { font-size: 22px; font-weight: 700; margin-bottom: 35px; }
 .about-body { font-size: 13px; line-height: 2.2; color: #444; }
 .about-slogan-text { margin-top: 60px; padding: 30px; font-size: 15px; font-weight: 700; transition: all 0.8s ease; margin-bottom: 80px; }
 .about-audio-widget-inpage { width: var(--grid-w); margin-bottom: 100px; }
+
+/* EXPERIENCE */
+.experience-img-frame { width: 85%; max-width: 900px; display: block; }
+.experience-img-frame img { width: 100%; height: auto; object-fit: contain; }
+
+/* [수정] EPISODE 1열 세로 리스트 */
+.episode-vertical-list { display: flex; flex-direction: column; gap: 60px; width: 85%; max-width: 900px; margin-bottom: 60px; }
+.episode-item-wide { position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; cursor: pointer; }
+.episode-item-wide img { width: 100%; height: 100%; object-fit: cover; }
+.episode-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); opacity: 0; transition: opacity 0.3s ease; display: flex; align-items: center; justify-content: center; padding: 40px; box-sizing: border-box; }
+.episode-item-wide:hover .episode-overlay { opacity: 1; }
+.overlay-text { color: #fff; font-weight: 700; font-size: 11pt; text-align: center; line-height: 1.6; word-break: keep-all; }
+.episode-footer-text { text-align: center; width: 85%; max-width: 900px; }
+.episode-footer-text p { font-size: 11pt; line-height: 1.6; color: #777; margin: 8px 0; word-break: keep-all; }
 
 .home-back-btn { position: fixed !important; right: 30px; bottom: 30px; width: 45px; height: 45px; z-index: 500; cursor: pointer; transition: transform 0.3s ease; }
 .home-back-btn img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
 
 .slogan-focus-mode .internal-layout, .slogan-focus-mode .internal-section { background-color: #000; }
 .slogan-focus-mode .about-slogan-text { color: #fff; transform: scale(1.03); }
-.slogan-focus-mode .internal-sidebar, .slogan-focus-mode .about-body, .slogan-focus-mode .home-back-btn, .slogan-focus-mode .about-audio-widget-inpage { opacity: 0 !important; pointer-events: none; }
+.slogan-focus-mode .internal-sidebar, .slogan-focus-mode .about-body, .slogan-focus-mode .home-back-btn, .slogan-focus-mode .about-audio-widget-inpage, .slogan-focus-mode .about-date, .slogan-focus-mode .about-question { opacity: 0 !important; pointer-events: none; }
 
 @keyframes hintAppear { from { opacity: 0; transform: translateY(-2px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
