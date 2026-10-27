@@ -6,7 +6,7 @@ const TOTAL_NODES = 17;
 const INITIAL_LOGO_INDICES = [3, 13]; 
 
 const EPISODE_DATA = [
-  { id: 1, text: "보이지 않지만 언제나 곁은 지나간다." },
+  { id: 1, text: "보이지 않지만 언제나 곁을 지나간다." },
   { id: 2, text: "시간과 공간을 기억하며" },
   { id: 3, text: "빛나는 시간과 평온함" },
   { id: 4, text: "가지 않은 길" },
