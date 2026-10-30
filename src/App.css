@@ -17,18 +17,15 @@ body {
 
 .app-root-container { width: 100vw; height: 100vh; position: relative; }
 
-/* [복구] 인트로 페이지 그리드 정중앙 정렬 로직 */
-.page-home { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; position: relative; }
-.viewport { 
-  flex: 1; 
-  display: flex; 
-  align-items: center; 
-  justify-content: center; 
-  width: 100%; 
-  /* 수직 중앙 정렬을 보장하고 하단 푸터와의 여백 확보 */
-  padding-bottom: 10vh; 
+/* --- [수정] 홈 그리드 영역 전체 클릭 가능하도록 커서 추가 --- */
+.clickable-grid {
+  cursor: pointer;
 }
-.main-grid-wrapper { position: relative; width: var(--grid-w); height: var(--grid-h); }
+
+/* --- HOME VIEW (1:50 VERSION) --- */
+.page-home { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; position: relative; }
+.viewport { flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; padding-bottom: 10vh; }
+.main-grid-wrapper { position: relative; width: var(--grid-w); height: var(--grid-h); transform-origin: center center; }
 .layer-static, .layer-dynamic { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; transition: opacity 1.5s ease-in-out; pointer-events: none; }
 .on { opacity: 1 !important; pointer-events: auto !important; z-index: 10; }
 .pixel-perfect { width: 100%; height: 100%; object-fit: fill; display: block; }
@@ -68,7 +65,6 @@ input { font-family: 'IBM Plex Sans', sans-serif; font-size: 9px; font-weight: 4
 .brand-video { width: 100%; height: 100%; object-fit: cover; display: block; }
 .main-slogan { font-size: 24px; font-weight: 700; letter-spacing: 0.1em; color: #000; text-align: center; }
 
-/* EVERYTHING */
 .everything-frame { width: 85%; max-width: 900px; display: flex; flex-direction: column; align-items: center; gap: 10px; position: relative; }
 .page-everything { width: 100%; aspect-ratio: 16 / 9; position: relative; overflow: hidden; background: #fcfcfc; border: 0.5px solid #eee; }
 .everything-frame:hover canvas { filter: blur(6px) grayscale(0.2); }
@@ -80,29 +76,13 @@ input { font-family: 'IBM Plex Sans', sans-serif; font-size: 9px; font-weight: 4
 .halftone-box input[type="range"] { width: 80px; -webkit-appearance: none; height: 1px; background: #ddd; outline: none; margin: 0 auto; }
 .halftone-box input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 8px; height: 8px; background: #000; border-radius: 50%; cursor: pointer; }
 
-/* [수정] ABOUT 페이지 텍스트 가로 영역 확장 */
-.about-editorial-wrap { 
-  display: flex; 
-  flex-direction: column; 
-  align-items: center; 
-  text-align: center; 
-  /* 가로 너비를 500px에서 800px로 대폭 확장하여 줄바꿈 방지 */
-  max-width: 800px; 
-}
+.about-editorial-wrap { display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 800px; }
 .about-date { font-size: 11px; color: #999; margin-bottom: 25px; }
 .about-question { font-size: 22px; font-weight: 700; margin-bottom: 35px; }
-.about-body { 
-  font-size: 13.5px; 
-  line-height: 2.3; 
-  color: #444; 
-  /* 텍스트 정렬을 위해 양옆 여백 고정 */
-  width: 100%; 
-  word-break: keep-all; 
-}
+.about-body { font-size: 13.5px; line-height: 2.3; color: #444; width: 100%; word-break: keep-all; }
 .about-slogan-text { margin-top: 60px; padding: 30px; font-size: 15px; font-weight: 700; transition: all 0.8s ease; margin-bottom: 80px; }
 .about-audio-widget-inpage { width: var(--grid-w); margin-top: 20px; margin-bottom: 100px; }
 
-/* EXPERIENCE */
 .experience-img-frame { width: 85%; max-width: 900px; display: block; }
 .experience-img-frame img { width: 100%; height: auto; object-fit: contain; }
 
@@ -125,7 +105,5 @@ input { font-family: 'IBM Plex Sans', sans-serif; font-size: 9px; font-weight: 4
 @keyframes hintAppear { from { opacity: 0; transform: translateY(-2px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-/* [수정] 페이지 전환 페이드 인 효과 추가 */
-.view-fade-in {
-  animation: fadeIn 0.8s ease-in-out forwards;
-}
+/* [추가] 페이지 전환 페이드 인 효과 */
+.view-fade-in { animation: fadeIn 0.8s ease-in-out forwards; }
