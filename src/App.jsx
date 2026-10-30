@@ -6,7 +6,7 @@ const TOTAL_NODES = 17;
 const INITIAL_LOGO_INDICES = [3, 13]; 
 
 const EPISODE_DATA = [
-  { id: 1, text: "보이지 않지만 언제나 곁을 지나간다." },
+  { id: 1, text: "보이지 않지만 언제나 곁은 지나간다." },
   { id: 2, text: "시간과 공간을 기억하며" },
   { id: 3, text: "빛나는 시간과 평온함" },
   { id: 4, text: "가지 않은 길" },
@@ -28,7 +28,7 @@ const generateGridNodes = () => {
 
 function App() {
   const [view, setView] = useState('home'); 
-  const [activeSection, setActiveSection] = useState('empty'); 
+  const [activeSection, setActiveSection] = useState('overview'); 
   const [inputText, setInputText] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [nodes] = useState(generateGridNodes());
@@ -44,10 +44,15 @@ function App() {
   const canvasRef = useRef(null);
   const imageBuffer = useRef(null);
   const lastInteractionTime = useRef(Date.now()); 
-  const subPageActivityTime = useRef(Date.now()); 
   const scrollContainerRef = useRef(null);
   const inputRef = useRef(null);
   const inputTimeout = useRef(null);
+
+  const overviewRef = useRef(null);
+  const everythingRef = useRef(null);
+  const aboutRef = useRef(null);
+  const experienceRef = useRef(null);
+  const episodeRef = useRef(null);
 
   const preloadImage = (url) => {
     return new Promise((resolve) => {
@@ -129,12 +134,6 @@ function App() {
 
   useEffect(() => { if (view === 'internal') drawHalftone(); }, [drawHalftone, view, currentBgImage, dotSize]);
 
-  const overviewRef = useRef(null);
-  const everythingRef = useRef(null);
-  const aboutRef = useRef(null);
-  const experienceRef = useRef(null);
-  const episodeRef = useRef(null);
-
   useEffect(() => {
     if (view !== 'internal') return;
     const handleScroll = () => {
@@ -144,22 +143,30 @@ function App() {
       else if (aboutRef.current && scrollPos >= aboutRef.current.offsetTop) setActiveSection('about');
       else if (everythingRef.current && scrollPos >= everythingRef.current.offsetTop) setActiveSection('everything');
       else setActiveSection('overview');
-      subPageActivityTime.current = Date.now();
     };
     const container = scrollContainerRef.current;
     container.addEventListener('scroll', handleScroll);
     return () => container.removeEventListener('scroll', handleScroll);
   }, [view]);
 
+  // [수정] 인트로 시퀀스 타이머 (자동 새로고침/복귀 로직 삭제)
   useEffect(() => {
     const timer = setInterval(() => {
+      if (view !== 'home' || isFocused) return;
       const now = Date.now();
-      if (view === 'home' && !isFocused) {
-        const diff = (now - lastInteractionTime.current) / 1000;
-        if (mode === 'interactive' && diff >= 12) { setMode('static'); setInputText(''); }
-        else if (mode === 'static' && diff >= 10 && diff < 40) { if (mode !== 'slideshow') { setMode('slideshow'); fetchNewImage('minimal'); } }
-        else if (mode === 'slideshow' && diff >= 40) { setMode('static'); lastInteractionTime.current = Date.now(); }
-      } else if (view !== 'home' && (now - subPageActivityTime.current) / 1000 >= 180) { setView('home'); setMode('static'); }
+      const diff = (now - lastInteractionTime.current) / 1000;
+
+      // 입력 중 무반응 시 초기화는 유지 (인트로 내에서만)
+      if (mode === 'interactive' && diff >= 12) { 
+        setMode('static'); setInputText(''); 
+      }
+      // 유휴 상태에서 슬라이드쇼 전환 유지
+      else if (mode === 'static' && diff >= 25 && diff < 55) { 
+        if (mode !== 'slideshow') { setMode('slideshow'); fetchNewImage('minimal'); } 
+      }
+      else if (mode === 'slideshow' && diff >= 55) { 
+        setMode('static'); lastInteractionTime.current = Date.now(); 
+      }
     }, 1000);
     return () => clearInterval(timer);
   }, [mode, view, isFocused]);
@@ -174,21 +181,24 @@ function App() {
       {view === 'home' && (
         <div className="page-home">
           <div className="viewport">
-            <div className="main-grid-wrapper">
+            {/* [수정] 메인 그리드 래퍼 자체에 클릭 이벤트 부여 */}
+            <div className="main-grid-wrapper clickable-grid" onClick={() => setView('internal')}>
               <div className={`layer-static ${mode === 'static' ? 'on' : ''}`}><img src="/assets/initial-grid.png" alt="Static" className="pixel-perfect" /></div>
               <div className={`layer-dynamic ${mode !== 'static' ? 'on' : ''}`}>
                 {nodes.map(n => (
                   <div key={n.id} className="mask-circle" style={{ left: n.x, top: n.y, backgroundImage: currentBgImage ? `url(${currentBgImage})` : 'none', backgroundPosition: `-${n.x}px -${n.y}px`, backgroundSize: '496px 396px' }} />
                 ))}
                 {activeIndices.map((idx, i) => (
-                  <div key={i} className={`logo-overlay-marker clickable ${isShuffling ? 'shuffling' : ''}`} style={{ transform: `translate(${nodes[idx].x}px, ${nodes[idx].y}px)` }} onClick={() => setView('internal')}><img src="/assets/logo-reference.png" alt="Logo" /></div>
+                  <div key={i} className={`logo-overlay-marker ${isShuffling ? 'shuffling' : ''}`} style={{ transform: `translate(${nodes[idx].x}px, ${nodes[idx].y}px)` }}>
+                    <img src="/assets/logo-reference.png" alt="Logo" />
+                  </div>
                 ))}
               </div>
             </div>
           </div>
           <footer className="footer-layout">
             <div className="footer-container">
-              <div className={`dynamic-input-area ${inputText ? 'is-active' : ''}`} onClick={() => inputRef.current?.focus()}>
+              <div className={`dynamic-input-area ${inputText ? 'is-active' : ''}`} onClick={(e) => { e.stopPropagation(); inputRef.current?.focus(); }}>
                 <span className="touch-text">TOUCH</span><span className="comma-text">,</span>
                 <div className="input-field-wrapper">
                   <input ref={inputRef} value={inputText} onFocus={() => setIsFocused(true)} onBlur={() => setIsFocused(false)} onChange={e => handleHomeInteraction(e.target.value)} autoComplete="off" spellCheck="false" />
@@ -206,7 +216,7 @@ function App() {
           <aside className="internal-sidebar">
             <div className="sidebar-group">
               <div className="sidebar-title" onClick={() => setView('home')}>TOUCH</div>
-              <div className={`sidebar-comma ${activeSection === 'overview' ? 'active' : ''}`}>,</div>
+              <div className={`sidebar-comma ${activeSection !== 'overview' ? 'active' : ''}`}>,</div>
               <nav className="sidebar-nav">
                 <button className={activeSection === 'everything' ? 'active' : ''} onClick={() => scrollTo(everythingRef)}>EVERYTHING</button>
                 <button className={activeSection === 'about' ? 'active' : ''} onClick={() => scrollTo(aboutRef)}>ABOUT</button>
@@ -249,7 +259,6 @@ function App() {
               <div className="about-editorial-wrap">
                 <p className="about-date">2026년 6월 12일, 맑음</p>
                 <h2 className="about-question">당신은 무엇에 주의를 기울이고 있나요?</h2>
-                {/* [수정] 요청하신 문구 적용 및 가로 너비 확보를 위한 구조 */}
                 <p className="about-body">
                   그 어느 때보다 많은 정보와 콘텐츠가 우리의 삶을 풍족하게 해주고 있다.<br/>
                   새로운 정보와 즐거움을 찾기 쉬워졌지만, 우연히 발견하게 되는 일상의 즐거움은 어디로 갔을까.<br/><br/>
